@@ -11,6 +11,7 @@ import {
   RefreshCw,
   FolderTree,
   Send,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Github } from '@/components/Icons/GithubIcon';
 import { PublishModal } from '@/components/Modals/PublishModal';
@@ -19,7 +20,7 @@ import { InitRepoModal } from '@/components/Modals/InitRepoModal';
 
 export const WorkspacePage: React.FC = () => {
   const { projectInfo } = useRepository();
-  const { status, currentBranch, commits, remotes, refresh } = useGit();
+  const { status, currentBranch, commits, remotes, refresh, push, operationState } = useGit();
   const { isAuthenticated, session } = useAuth();
   const { setActiveView } = useUI();
 
@@ -65,6 +66,33 @@ export const WorkspacePage: React.FC = () => {
               <button className="btn-gitdrop btn-gitdrop-primary" onClick={() => setPublishModalOpen(true)}>
                 <Github size={14} />
                 <span>Publish to GitHub</span>
+              </button>
+            )}
+
+            {remotes.length > 0 && (
+              <button
+                className="btn-gitdrop btn-gitdrop-primary"
+                onClick={() => push()}
+                disabled={operationState.status === 'running'}
+                title={`Push commits to ${remotes[0]?.name || 'origin'}`}
+              >
+                <ArrowUpRight size={14} />
+                <span>
+                  {operationState.type === 'push' && operationState.status === 'running'
+                    ? 'Pushing...'
+                    : 'Push to Remote'}
+                </span>
+              </button>
+            )}
+
+            {remotes.length > 0 && isAuthenticated && (
+              <button
+                className="btn-gitdrop"
+                onClick={() => setPublishModalOpen(true)}
+                title="Publish Settings or Re-link"
+              >
+                <Github size={14} />
+                <span>Publish Settings</span>
               </button>
             )}
           </div>
@@ -156,6 +184,43 @@ export const WorkspacePage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Remote Origin Banner */}
+        {remotes.length > 0 && (
+          <div
+            style={{
+              padding: '12px 16px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Github size={18} color="var(--accent-text)" />
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 600 }}>
+                  Remote origin: <span style={{ fontFamily: 'monospace', color: 'var(--accent-text)' }}>{remotes[0]?.url}</span>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Branch <strong>{currentBranch}</strong>
+                  {(status?.ahead || 0) > 0 ? ` • ${status?.ahead} unpushed commit${(status?.ahead || 0) > 1 ? 's' : ''}` : ' • Ready to push / sync'}
+                </div>
+              </div>
+            </div>
+            <button
+              className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+              onClick={() => push()}
+              disabled={operationState.status === 'running'}
+            >
+              <ArrowUpRight size={13} />
+              <span>{operationState.type === 'push' && operationState.status === 'running' ? 'Pushing...' : 'Push Commits'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Quick Action Tiles */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>

@@ -32,6 +32,12 @@ export class GitHubProvider implements IRemoteProvider {
         if (errorJson.message) {
           errMsg = errorJson.message;
         }
+        if (Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
+          const details = errorJson.errors
+            .map((e: any) => e.message || e.field || JSON.stringify(e))
+            .join('; ');
+          errMsg = `${errMsg} (${details})`;
+        }
       } catch {
         // ignore
       }
@@ -84,31 +90,40 @@ export class GitHubProvider implements IRemoteProvider {
 
   public async createRepository(token: string, options: CreateRepositoryOptions): Promise<RemoteRepository> {
     logger.info('remote', `Creating GitHub repository "${options.name}" (private: ${options.private})`);
-    const data: any = await this.request('/user/repos', token, {
-      method: 'POST',
-      body: JSON.stringify({
-        name: options.name,
-        description: options.description || '',
-        private: options.private,
-        auto_init: options.autoInit || false,
-      }),
-    });
+    try {
+      const data: any = await this.request('/user/repos', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: options.name,
+          description: options.description || '',
+          private: options.private,
+          auto_init: options.autoInit || false,
+        }),
+      });
 
-    logger.info('remote', `Successfully created GitHub repository: ${data.html_url}`);
-    return {
-      id: data.id,
-      name: data.name,
-      fullName: data.full_name,
-      description: data.description,
-      private: data.private,
-      htmlUrl: data.html_url,
-      cloneUrl: data.clone_url,
-      defaultBranch: data.default_branch || 'main',
-      owner: {
-        login: data.owner.login,
-        avatarUrl: data.owner.avatar_url,
-      },
-    };
+      logger.info('remote', `Successfully created GitHub repository: ${data.html_url}`);
+      return {
+        id: data.id,
+        name: data.name,
+        fullName: data.full_name,
+        description: data.description,
+        private: data.private,
+        htmlUrl: data.html_url,
+        cloneUrl: data.clone_url,
+        defaultBranch: data.default_branch || 'main',
+        owner: {
+          login: data.owner.login,
+          avatarUrl: data.owner.avatar_url,
+        },
+      };
+    } catch (err: any) {
+      if (err.message && (err.message.includes('already exists') || err.message.includes('422'))) {
+        logger.info('remote', `Repository "${options.name}" already exists on GitHub. Resolving existing repository info.`);
+        const user = await this.getCurrentUser(token);
+        return await this.getRepository(token, user.login, options.name);
+      }
+      throw err;
+    }
   }
 
   public async getRepository(token: string, owner: string, name: string): Promise<RemoteRepository> {
@@ -121,7 +136,7 @@ export class GitHubProvider implements IRemoteProvider {
       private: data.private,
       htmlUrl: data.html_url,
       cloneUrl: data.clone_url,
-      defaultBranch: data.default_branch,
+      defaultBranch: data.default_branch || 'main',
       owner: {
         login: data.owner.login,
         avatarUrl: data.owner.avatar_url,

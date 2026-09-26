@@ -70,14 +70,23 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, 
 
         // Create on GitHub if selected
         if (createOnGitHub && session?.token) {
-          setStatusText(`Creating repository "${projectName}" on GitHub...`);
+          setStatusText(`Creating or connecting repository "${projectName}" on GitHub...`);
           const ghRepo = await createRemoteRepo({
             name: projectName,
             private: isPrivate,
           });
           await git.addRemote('origin', ghRepo.cloneUrl);
           setStatusText('Pushing initial commit to GitHub...');
-          await git.push({ remote: 'origin', branch: config.defaultBranch || 'main' });
+          try {
+            await git.push({
+              remote: 'origin',
+              branch: config.defaultBranch || 'main',
+              corsProxy: config.corsProxy,
+              token: session.token,
+            });
+          } catch (pushErr: any) {
+            alert(`Repository created on GitHub and locally, but initial push failed: ${pushErr.message}\n\nYou can click 'Push to Remote' in the workspace once ready.`);
+          }
         }
 
         await openDirectoryHandle(handle);

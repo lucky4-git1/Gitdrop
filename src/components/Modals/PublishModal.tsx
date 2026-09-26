@@ -14,7 +14,7 @@ interface PublishModalProps {
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
   const { projectInfo } = useRepository();
   const { session, createRemoteRepo } = useAuth();
-  const { stageAll, commit, addRemote, push } = useGit();
+  const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
   const { config } = useConfig();
 
   const [name, setName] = useState(projectInfo?.name || 'my-project');
@@ -24,16 +24,20 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
   const [steps, setSteps] = useState<{ id: string; label: string; status: 'pending' | 'running' | 'done' | 'error' }[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handlePublish = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const existingOrigin = remotes.find((r) => r.name === 'origin');
+
+  const handlePublish = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!session?.token) return;
 
     setIsPublishing(true);
+    setErrorMessage(null);
     const initialSteps = [
-      { id: 'create', label: 'Create GitHub repository', status: 'running' as const },
+      { id: 'create', label: 'Create or connect GitHub repository', status: 'running' as const },
       { id: 'remote', label: 'Configure origin remote', status: 'pending' as const },
       { id: 'stage', label: 'Stage all files', status: 'pending' as const },
       { id: 'commit', label: 'Create initial commit', status: 'pending' as const },
@@ -41,22 +45,30 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
     ];
     setSteps(initialSteps);
 
-    const updateStep = (id: string, status: 'running' | 'done' | 'error') => {
-      setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    const updateStep = (id: string, status: 'running' | 'done' | 'error', newLabel?: string) => {
+      setSteps((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status, ...(newLabel ? { label: newLabel } : {}) } : s))
+      );
     };
 
     try {
-      // 1. Create GitHub repository
-      const remoteRepo = await createRemoteRepo({
-        name,
-        description,
-        private: isPrivate,
-      });
-      updateStep('create', 'done');
+      // 1. Create or resolve GitHub repository
+      let remoteUrl = existingOrigin?.url;
+      if (!remoteUrl) {
+        const remoteRepo = await createRemoteRepo({
+          name,
+          description,
+          private: isPrivate,
+        });
+        remoteUrl = remoteRepo.cloneUrl;
+        updateStep('create', 'done', `Connected repository: ${remoteRepo.fullName}`);
+      } else {
+        updateStep('create', 'done', `Using existing remote repository: ${name}`);
+      }
 
-      // 2. Add remote
+      // 2. Add or update remote
       updateStep('remote', 'running');
-      await addRemote('origin', remoteRepo.cloneUrl);
+      await addRemote('origin', remoteUrl);
       updateStep('remote', 'done');
 
       // 3. Stage files
@@ -69,14 +81,15 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
       try {
         await commit('Initial commit via GitDrop');
       } catch {
-        // If there's already a commit, continue
+        // If there are no new changes to commit, continue
       }
       updateStep('commit', 'done');
 
       // 5. Push
-      updateStep('push', 'running');
-      await push({ remote: 'origin', branch: config.defaultBranch || 'main' });
-      updateStep('push', 'done');
+      const targetBranch = currentBranch || config.defaultBranch || 'main';
+      updateStep('push', 'running', `Pushing branch "${targetBranch}" to GitHub...`);
+      await push({ remote: 'origin', branch: targetBranch });
+      updateStep('push', 'done', `Pushed "${targetBranch}" to GitHub successfully!`);
 
       setIsSuccess(true);
       setTimeout(() => {
@@ -84,9 +97,9 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
         setIsPublishing(false);
         onClose();
       }, 1500);
-    } catch {
-      // Step failed
+    } catch (err: any) {
       setSteps((prev) => prev.map((s) => (s.status === 'running' ? { ...s, status: 'error' } : s)));
+      setErrorMessage(err.message || 'Publishing operation failed.');
       setIsPublishing(false);
     }
   };
@@ -104,7 +117,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
           </button>
         </div>
 
-        {isPublishing || isSuccess ? (
+        {isPublishing || isSuccess || errorMessage ? (
           <div className="modal-gitdrop-body">
             <div style={{ marginBottom: '16px', fontWeight: 500, fontSize: '13px' }}>
               Publishing {name} to GitHub...
@@ -116,16 +129,68 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
                   {s.status === 'running' && <Loader2 size={16} className="spin" color="var(--accent-text)" />}
                   {s.status === 'pending' && <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid var(--border)' }} />}
                   {s.status === 'error' && <X size={16} color="var(--danger-text)" />}
-                  <span style={{ color: s.status === 'pending' ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                  <span style={{ color: s.status === 'pending' ? 'var(--text-muted)' : s.status === 'error' ? 'var(--danger-text)' : 'var(--text-primary)' }}>
                     {s.label}
                   </span>
                 </div>
               ))}
             </div>
+
+            {errorMessage && (
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '12px',
+                  backgroundColor: 'var(--danger-bg)',
+                  border: '1px solid var(--danger-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '12px',
+                  color: 'var(--danger-text)',
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Publish Failed</div>
+                <div>{errorMessage}</div>
+                <div style={{ marginTop: '8px', fontSize: '11px', opacity: 0.9 }}>
+                  Tip: Ensure your GitHub Personal Access Token in Settings has `repo` write permissions, and that the CORS proxy is accessible.
+                </div>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                <button type="button" className="btn-gitdrop" onClick={onClose}>
+                  Close
+                </button>
+                <button type="button" className="btn-gitdrop btn-gitdrop-primary" onClick={() => handlePublish()}>
+                  Retry Publish
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handlePublish}>
             <div className="modal-gitdrop-body">
+              {existingOrigin && (
+                <div
+                  style={{
+                    padding: '10px 12px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)',
+                    fontSize: '12px',
+                    marginBottom: '14px',
+                  }}
+                >
+                  <div style={{ fontWeight: 500, color: 'var(--accent-text)' }}>Origin remote already configured:</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', wordBreak: 'break-all' }}>
+                    {existingOrigin.url}
+                  </div>
+                  <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Publishing will push your current commits directly to this remote.
+                  </div>
+                </div>
+              )}
+
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '6px' }}>
                   Repository Name
@@ -185,7 +250,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
                 Cancel
               </button>
               <button type="submit" className="btn-gitdrop btn-gitdrop-primary">
-                Create & Publish
+                {existingOrigin ? 'Push to GitHub' : 'Create & Publish'}
               </button>
             </div>
           </form>

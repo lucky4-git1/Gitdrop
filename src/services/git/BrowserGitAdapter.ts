@@ -535,8 +535,28 @@ export class BrowserGitAdapter implements GitService {
     }));
   }
 
+  private getAuthCredentials(token?: string) {
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+      const b64 = typeof btoa === 'function' ? btoa(`${token}:`) : Buffer.from(`${token}:`).toString('base64');
+      authHeaders['Authorization'] = `Basic ${b64}`;
+    }
+    const authCallback = () => {
+      if (!token) return {};
+      return {
+        username: token,
+        password: '',
+      };
+    };
+    return { headers: authHeaders, onAuth: authCallback, onAuthFailure: authCallback };
+  }
+
   public async addRemote(name: string, url: string): Promise<void> {
     logger.info('git', `git remote add ${name} ${url}`);
+    const existing = await this.remotes().catch(() => []);
+    if (existing.some((r) => r.name === name)) {
+      await this.removeRemote(name).catch(() => {});
+    }
     await git.addRemote({
       fs: this.gitFs,
       dir: this.dir,
@@ -557,21 +577,25 @@ export class BrowserGitAdapter implements GitService {
   public async fetch(options?: { remote?: string; corsProxy?: string; token?: string }): Promise<void> {
     const remote = options?.remote || 'origin';
     logger.info('git', `git fetch ${remote}`);
+    const auth = this.getAuthCredentials(options?.token);
     await git.fetch({
       fs: this.gitFs,
       http,
       dir: this.dir,
       remote,
       corsProxy: options?.corsProxy || 'https://cors.isomorphic-git.org',
-      onAuth: () => ({ username: options?.token || '' }),
+      headers: auth.headers,
+      onAuth: auth.onAuth,
+      onAuthFailure: auth.onAuthFailure,
     });
     logger.info('git', `From ${remote}\n * [new branch] updated`);
   }
 
   public async pull(options?: { remote?: string; branch?: string; corsProxy?: string; token?: string }): Promise<void> {
     const remote = options?.remote || 'origin';
-    const branch = options?.branch || (await this.currentBranch());
+    const branch = options?.branch || (await this.currentBranch()) || 'main';
     logger.info('git', `git pull ${remote} ${branch}`);
+    const auth = this.getAuthCredentials(options?.token);
     await git.pull({
       fs: this.gitFs,
       http,
@@ -579,11 +603,13 @@ export class BrowserGitAdapter implements GitService {
       remote,
       ref: branch,
       corsProxy: options?.corsProxy || 'https://cors.isomorphic-git.org',
+      headers: auth.headers,
       author: {
         name: 'GitDrop User',
         email: 'user@gitdrop.local',
       },
-      onAuth: () => ({ username: options?.token || '' }),
+      onAuth: auth.onAuth,
+      onAuthFailure: auth.onAuthFailure,
     });
     logger.info('git', `Already up to date or pulled cleanly.`);
   }
@@ -596,8 +622,9 @@ export class BrowserGitAdapter implements GitService {
     token?: string;
   }): Promise<void> {
     const remote = options?.remote || 'origin';
-    const branch = options?.branch || (await this.currentBranch());
+    const branch = options?.branch || (await this.currentBranch()) || 'main';
     logger.info('git', `git push ${options?.force ? '--force ' : ''}${remote} ${branch}`);
+    const auth = this.getAuthCredentials(options?.token);
 
     const res = await git.push({
       fs: this.gitFs,
@@ -607,7 +634,9 @@ export class BrowserGitAdapter implements GitService {
       ref: branch,
       force: options?.force,
       corsProxy: options?.corsProxy || 'https://cors.isomorphic-git.org',
-      onAuth: () => ({ username: options?.token || '' }),
+      headers: auth.headers,
+      onAuth: auth.onAuth,
+      onAuthFailure: auth.onAuthFailure,
     });
 
     if (res.ok) {
@@ -679,13 +708,16 @@ export class BrowserGitAdapter implements GitService {
 
   public async clone(options: { url: string; dir?: string; corsProxy?: string; token?: string; depth?: number }): Promise<void> {
     logger.info('git', `git clone ${options.url}`);
+    const auth = this.getAuthCredentials(options?.token);
     await git.clone({
       fs: this.gitFs,
       http,
       dir: options.dir || this.dir,
       url: options.url,
       corsProxy: options.corsProxy || 'https://cors.isomorphic-git.org',
-      onAuth: () => ({ username: options?.token || '' }),
+      headers: auth.headers,
+      onAuth: auth.onAuth,
+      onAuthFailure: auth.onAuthFailure,
       depth: options.depth || 50,
       singleBranch: true,
     });
