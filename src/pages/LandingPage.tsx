@@ -90,18 +90,27 @@ export const LandingPage: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px 16px',
+        padding: '36px 16px',
         backgroundColor: 'var(--bg-primary)',
+        minHeight: 0,
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div style={{ maxWidth: '580px', width: '100%', textAlign: 'center' }}>
+      <div
+        style={{
+          maxWidth: '580px',
+          width: '100%',
+          textAlign: 'center',
+          margin: 'auto 0',
+          paddingTop: '8px',
+          paddingBottom: '8px',
+        }}
+      >
         {/* Brand Header */}
         <div style={{ marginBottom: '28px' }}>
-          <img src="/gitdrop-icon.svg" alt="GitDrop" style={{ width: '48px', height: '48px', marginBottom: '14px' }} />
+          <img src="/gitdrop-icon.svg" alt="GitDrop" style={{ width: '48px', height: '48px', marginBottom: '14px', display: 'inline-block' }} />
           <h1 style={{ fontSize: '26px', fontWeight: 700, margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
             GitDrop
           </h1>
