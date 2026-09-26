@@ -90,13 +90,13 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       setIsLoading(true);
       const [curBranch, stat, branchList, commitList, remoteList, tagList, stashList] = await Promise.all([
-        gitService.currentBranch(),
-        gitService.status(),
-        gitService.branch(),
-        gitService.log({ depth: 50 }),
-        gitService.remotes(),
-        gitService.tags(),
-        gitService.stashList(),
+        gitService.currentBranch().catch(() => config.defaultBranch || 'main'),
+        gitService.status().catch(() => null),
+        gitService.branch().catch(() => []),
+        gitService.log({ depth: 50 }).catch(() => []),
+        gitService.remotes().catch(() => []),
+        gitService.tags().catch(() => []),
+        gitService.stashList().catch(() => []),
       ]);
 
       setCurrentBranch(curBranch);
@@ -111,7 +111,7 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setIsLoading(false);
     }
-  }, [gitService, projectInfo?.isGit]);
+  }, [gitService, projectInfo?.isGit, config.defaultBranch]);
 
   useEffect(() => {
     refresh();
@@ -157,8 +157,9 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const stageAll = useCallback(async () => {
-    if (!status || !gitService) return;
-    const allPaths = status.unstaged.map((f) => f.path);
+    if (!gitService) return;
+    const stat = await gitService.status().catch(() => null);
+    const allPaths = stat ? stat.unstaged.map((f) => f.path) : (status?.unstaged.map((f) => f.path) || []);
     if (allPaths.length === 0) return;
     await stageFiles(allPaths);
   }, [status, gitService, stageFiles]);
@@ -325,12 +326,13 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const push = useCallback(
     async (options?: { remote?: string; branch?: string; force?: boolean }) => {
       if (!gitService) return;
+      const targetBranch = options?.branch || currentBranch || (await gitService.currentBranch().catch(() => 'main'));
       await runOperation(
         'push',
         () =>
           gitService.push({
             remote: options?.remote,
-            branch: options?.branch,
+            branch: targetBranch,
             force: options?.force,
             corsProxy: config.corsProxy,
             token: session?.token,
@@ -338,7 +340,7 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'Push Rejected'
       );
     },
-    [gitService, config.corsProxy, session?.token]
+    [gitService, config.corsProxy, session?.token, currentBranch]
   );
 
   const pull = useCallback(

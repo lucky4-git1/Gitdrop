@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useRepository } from '@/state/RepositoryContext';
 import { useAuth } from '@/state/AuthContext';
 import { useGit } from '@/state/GitContext';
-import { useConfig } from '@/state/ConfigContext';
 import { X, Check, Loader2 } from 'lucide-react';
 import { Github } from '@/components/Icons/GithubIcon';
 
@@ -12,10 +11,9 @@ interface PublishModalProps {
 }
 
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
-  const { projectInfo } = useRepository();
+  const { projectInfo, gitService } = useRepository();
   const { session, createRemoteRepo } = useAuth();
   const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
-  const { config } = useConfig();
 
   const [name, setName] = useState(projectInfo?.name || 'my-project');
   const [description, setDescription] = useState('');
@@ -78,18 +76,22 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
       // 4. Commit
       updateStep('commit', 'running');
-      try {
-        await commit('Initial commit via GitDrop');
-      } catch {
-        // If there are no new changes to commit, continue
+      const commitsList = (await gitService?.log({ depth: 1 }).catch(() => [])) || [];
+      const freshStatus = await gitService?.status().catch(() => null);
+      const hasStaged = (freshStatus?.staged.length || 0) > 0;
+
+      if (commitsList.length === 0 || hasStaged) {
+        await commit(commitsList.length === 0 ? 'Initial commit via GitDrop' : 'Update files via GitDrop');
+        updateStep('commit', 'done', commitsList.length === 0 ? 'Created initial commit' : 'Committed updates');
+      } else {
+        updateStep('commit', 'done', 'Local commits ready');
       }
-      updateStep('commit', 'done');
 
       // 5. Push
-      const targetBranch = currentBranch || config.defaultBranch || 'main';
-      updateStep('push', 'running', `Pushing branch "${targetBranch}" to GitHub...`);
-      await push({ remote: 'origin', branch: targetBranch });
-      updateStep('push', 'done', `Pushed "${targetBranch}" to GitHub successfully!`);
+      const activeBranch = (await gitService?.currentBranch().catch(() => null)) || currentBranch || 'main';
+      updateStep('push', 'running', `Pushing branch "${activeBranch}" to GitHub...`);
+      await push({ remote: 'origin', branch: activeBranch });
+      updateStep('push', 'done', `Pushed "${activeBranch}" to GitHub successfully!`);
 
       setIsSuccess(true);
       setTimeout(() => {
@@ -216,6 +218,15 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Short project description"
                 />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>
+                  Branch to Publish
+                </label>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Active branch: <strong style={{ color: 'var(--accent-text)' }}>{currentBranch}</strong> (will be pushed to GitHub)
+                </div>
               </div>
 
               <div>

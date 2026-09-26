@@ -103,12 +103,19 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await fs.writeFile('.gitignore', `node_modules/\ndist/\n.env\n*.local\n`);
 
     const git = new BrowserGitAdapter(fs, '/');
+    await git.init({
+      defaultBranch: config.defaultBranch || 'main',
+      user: { name: config.userName, email: config.userEmail },
+    });
+    await git.add(['package.json', 'vite.config.ts', 'README.md', 'src/App.tsx', 'src/main.tsx', '.gitignore']);
+    await git.commit('Initial commit via GitDrop');
+
     const info = await detectProject(fs, sampleName);
 
     setFileSystem(fs);
     setGitService(git);
     setProjectInfo(info);
-  }, []);
+  }, [config]);
 
   const initializeGit = useCallback(async (options: { defaultBranch: string; user: { name: string; email: string } }) => {
     if (!gitService || !fileSystem) throw new Error('No project opened');

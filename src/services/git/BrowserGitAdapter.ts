@@ -276,6 +276,14 @@ export class BrowserGitAdapter implements GitService {
       });
     }
 
+    if (list.length === 0 && current) {
+      list.push({
+        name: current,
+        current: true,
+        commitOid: undefined,
+      });
+    }
+
     return list;
   }
 
@@ -286,8 +294,29 @@ export class BrowserGitAdapter implements GitService {
         dir: this.dir,
         fullname: false,
       });
-      return b || 'main';
+      if (b) return b;
+
+      // Fallback: check .git/HEAD directly
+      if (await this.fs.exists('.git/HEAD')) {
+        const head = (await this.fs.readFile('.git/HEAD', { encoding: 'utf8' })) as string;
+        const match = head.trim().match(/^ref:\s*refs\/heads\/(.+)$/);
+        if (match && match[1]) {
+          return match[1].trim();
+        }
+      }
+      return 'main';
     } catch {
+      try {
+        if (await this.fs.exists('.git/HEAD')) {
+          const head = (await this.fs.readFile('.git/HEAD', { encoding: 'utf8' })) as string;
+          const match = head.trim().match(/^ref:\s*refs\/heads\/(.+)$/);
+          if (match && match[1]) {
+            return match[1].trim();
+          }
+        }
+      } catch {
+        // ignore
+      }
       return 'main';
     }
   }
@@ -622,7 +651,27 @@ export class BrowserGitAdapter implements GitService {
     token?: string;
   }): Promise<void> {
     const remote = options?.remote || 'origin';
-    const branch = options?.branch || (await this.currentBranch()) || 'main';
+    const current = await this.currentBranch();
+    let branch = options?.branch || current || 'main';
+
+    // Verify if requested branch exists locally
+    const localBranches = await git.listBranches({ fs: this.gitFs, dir: this.dir });
+    if (localBranches.length > 0 && !localBranches.includes(branch)) {
+      if (localBranches.includes(current)) {
+        logger.info('git', `Branch "${branch}" not found locally. Auto-routing push to active branch "${current}".`);
+        branch = current;
+      } else {
+        logger.info('git', `Branch "${branch}" not found locally. Auto-routing push to local branch "${localBranches[0]}".`);
+        branch = localBranches[0];
+      }
+    }
+
+    // Check if the branch has any commits to push
+    const branchOid = await git.resolveRef({ fs: this.gitFs, dir: this.dir, ref: branch }).catch(() => null);
+    if (!branchOid) {
+      throw new Error(`Branch "${branch}" has no commits yet. Please commit your changes before pushing.`);
+    }
+
     logger.info('git', `git push ${options?.force ? '--force ' : ''}${remote} ${branch}`);
     const auth = this.getAuthCredentials(options?.token);
 
