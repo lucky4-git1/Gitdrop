@@ -1,0 +1,298 @@
+export interface GitignorePreset {
+  id: string;
+  name: string;
+  category: 'Framework' | 'Language' | 'Tool' | 'OS';
+  rules: string[];
+}
+
+export const GITIGNORE_PRESETS: GitignorePreset[] = [
+  {
+    id: 'node',
+    name: 'Node.js',
+    category: 'Language',
+    rules: [
+      '# Node.js',
+      'node_modules/',
+      'npm-debug.log*',
+      'yarn-debug.log*',
+      'yarn-error.log*',
+      'pnpm-debug.log*',
+      '.pnpm-store/',
+      '.env',
+      '.env.local',
+      '.env.*.local',
+    ],
+  },
+  {
+    id: 'react',
+    name: 'React',
+    category: 'Framework',
+    rules: [
+      '# React / Build',
+      'dist/',
+      'build/',
+      '*.tsbuildinfo',
+      '.eslintcache',
+    ],
+  },
+  {
+    id: 'vite',
+    name: 'Vite',
+    category: 'Framework',
+    rules: [
+      '# Vite',
+      'dist/',
+      'dist-ssr/',
+      '*.local',
+    ],
+  },
+  {
+    id: 'nextjs',
+    name: 'Next.js',
+    category: 'Framework',
+    rules: [
+      '# Next.js',
+      '.next/',
+      'out/',
+      '.vercel/',
+    ],
+  },
+  {
+    id: 'python',
+    name: 'Python',
+    category: 'Language',
+    rules: [
+      '# Python',
+      '__pycache__/',
+      '*.py[cod]',
+      '*$py.class',
+      '.Python',
+      'env/',
+      'venv/',
+      'ENV/',
+      '.venv/',
+      '*.egg-info/',
+      '.pytest_cache/',
+    ],
+  },
+  {
+    id: 'rust',
+    name: 'Rust / Cargo',
+    category: 'Language',
+    rules: [
+      '# Rust',
+      '/target/',
+      '**/*.rs.bk',
+      'Cargo.lock',
+    ],
+  },
+  {
+    id: 'go',
+    name: 'Go',
+    category: 'Language',
+    rules: [
+      '# Go',
+      'bin/',
+      'pkg/',
+      '*.exe',
+      '*.test',
+      '*.out',
+    ],
+  },
+  {
+    id: 'java',
+    name: 'Java',
+    category: 'Language',
+    rules: [
+      '# Java',
+      '*.class',
+      '*.log',
+      '*.ctxt',
+      '*.jar',
+      '*.war',
+      '*.nar',
+      '*.ear',
+      '*.zip',
+      '*.tar.gz',
+      '*.rar',
+      'hs_err_pid*',
+    ],
+  },
+  {
+    id: 'maven',
+    name: 'Maven',
+    category: 'Tool',
+    rules: [
+      '# Maven',
+      'target/',
+      'pom.xml.tag',
+      'pom.xml.releaseBackup',
+      'pom.xml.versionsBackup',
+    ],
+  },
+  {
+    id: 'gradle',
+    name: 'Gradle',
+    category: 'Tool',
+    rules: [
+      '# Gradle',
+      '.gradle/',
+      'build/',
+    ],
+  },
+  {
+    id: 'php',
+    name: 'PHP',
+    category: 'Language',
+    rules: [
+      '# PHP',
+      'vendor/',
+      'composer.phar',
+      '.phpunit.result.cache',
+    ],
+  },
+  {
+    id: 'laravel',
+    name: 'Laravel',
+    category: 'Framework',
+    rules: [
+      '# Laravel',
+      '/vendor/',
+      'node_modules/',
+      'public/storage',
+      'public/hot',
+      'storage/*.key',
+      '.env',
+      '.env.backup',
+      '.phpunit.result.cache',
+    ],
+  },
+  {
+    id: 'c-cpp',
+    name: 'C / C++',
+    category: 'Language',
+    rules: [
+      '# C / C++',
+      '*.o',
+      '*.obj',
+      '*.dll',
+      '*.so',
+      '*.dylib',
+      '*.exe',
+      'bin/',
+      'build/',
+    ],
+  },
+  {
+    id: 'android',
+    name: 'Android',
+    category: 'Framework',
+    rules: [
+      '# Android',
+      '.gradle/',
+      'local.properties',
+      '.idea/caches/',
+      '.idea/libraries/',
+      '.idea/modules.xml',
+      '.idea/workspace.xml',
+      'captures/',
+      '*.apk',
+      '*.ap_',
+      '*.aab',
+    ],
+  },
+  {
+    id: 'flutter-dart',
+    name: 'Flutter / Dart',
+    category: 'Framework',
+    rules: [
+      '# Flutter / Dart',
+      '.dart_tool/',
+      '.flutter-plugins',
+      '.flutter-plugins-dependencies',
+      '.packages',
+      'build/',
+    ],
+  },
+  {
+    id: 'vscode',
+    name: 'VS Code',
+    category: 'Tool',
+    rules: [
+      '# VS Code',
+      '.vscode/*',
+      '!.vscode/settings.json',
+      '!.vscode/tasks.json',
+      '!.vscode/launch.json',
+      '!.vscode/extensions.json',
+      '*.code-workspace',
+    ],
+  },
+  {
+    id: 'intellij',
+    name: 'IntelliJ IDEA',
+    category: 'Tool',
+    rules: [
+      '# IntelliJ IDEA',
+      '.idea/',
+      '*.iml',
+      '*.iws',
+      'out/',
+    ],
+  },
+  {
+    id: 'macos',
+    name: 'macOS',
+    category: 'OS',
+    rules: [
+      '# macOS',
+      '.DS_Store',
+      '.AppleDouble',
+      '.LSOverride',
+      'Icon',
+      '._*',
+    ],
+  },
+  {
+    id: 'windows',
+    name: 'Windows',
+    category: 'OS',
+    rules: [
+      '# Windows',
+      'Thumbs.db',
+      'Thumbs.db:encryptable',
+      'ehthumbs.db',
+      'Desktop.ini',
+      '$RECYCLE.BIN/',
+    ],
+  },
+  {
+    id: 'linux',
+    name: 'Linux',
+    category: 'OS',
+    rules: [
+      '# Linux',
+      '*~',
+      '.fuse_hidden*',
+      '.directory',
+      '.Trash-*',
+      '.nfs*',
+    ],
+  },
+];
+
+export function generateGitignoreContent(selectedPresetIds: string[]): string {
+  const chosen = GITIGNORE_PRESETS.filter((p) => selectedPresetIds.includes(p.id));
+  const lines: string[] = [
+    '# Generated by GitDrop (https://gitdrop.dev)',
+    '# Visual Git Workspace for Developers',
+    '',
+  ];
+
+  for (const preset of chosen) {
+    lines.push(...preset.rules);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}

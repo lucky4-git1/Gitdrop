@@ -1,0 +1,297 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import './theme.css';
+
+/* Base & Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Typography & Links */
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 11px;
+  line-height: 10px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+  background-color: var(--bg-secondary);
+  border: solid 1px var(--border);
+  border-bottom-color: var(--border);
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* Buttons overriding Bootstrap with GitDrop styling */
+.btn-gitdrop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.12s ease-in-out;
+}
+
+.btn-gitdrop:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+}
+
+.btn-gitdrop:active:not(:disabled) {
+  background-color: var(--bg-active);
+}
+
+.btn-gitdrop:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-gitdrop-primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.btn-gitdrop-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+
+.btn-gitdrop-success {
+  background-color: var(--success);
+  border-color: var(--success);
+  color: #ffffff;
+}
+.btn-gitdrop-success:hover:not(:disabled) {
+  background-color: var(--success-hover);
+  border-color: var(--success-hover);
+  color: #ffffff;
+}
+
+.btn-gitdrop-danger {
+  background-color: transparent;
+  border-color: var(--danger-subtle);
+  color: var(--danger-text);
+}
+.btn-gitdrop-danger:hover:not(:disabled) {
+  background-color: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+}
+
+.btn-gitdrop-subtle {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+.btn-gitdrop-subtle:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+.btn-gitdrop-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+/* Form Controls */
+.form-control-gitdrop, .form-select-gitdrop {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  background-clip: padding-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control-gitdrop:focus, .form-select-gitdrop:focus {
+  border-color: var(--border-focus);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+.form-control-gitdrop::placeholder {
+  color: var(--text-muted);
+}
+
+/* Badges */
+.badge-gitdrop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.badge-gitdrop-modified {
+  background-color: var(--warning-subtle);
+  color: var(--warning-text);
+  border-color: rgba(210, 153, 34, 0.4);
+}
+
+.badge-gitdrop-added {
+  background-color: var(--success-subtle);
+  color: var(--success-text);
+  border-color: rgba(63, 185, 80, 0.4);
+}
+
+.badge-gitdrop-deleted {
+  background-color: var(--danger-subtle);
+  color: var(--danger-text);
+  border-color: rgba(248, 81, 73, 0.4);
+}
+
+.badge-gitdrop-untracked {
+  background-color: var(--info-subtle);
+  color: var(--info-text);
+  border-color: rgba(88, 166, 255, 0.4);
+}
+
+/* Modal and dialog custom styling */
+.modal-gitdrop-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-gitdrop {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 0.15s ease-out;
+}
+
+.modal-gitdrop-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-secondary);
+}
+
+.modal-gitdrop-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-gitdrop-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-gitdrop-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background-color: var(--bg-secondary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
