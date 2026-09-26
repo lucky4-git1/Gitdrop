@@ -11,10 +11,14 @@ import {
   Moon,
   Settings,
   ChevronDown,
-  Plus,
   FolderOpen,
+  Plus,
+  PlusCircle,
+  GitPullRequest,
 } from 'lucide-react';
 import { CreateBranchModal } from '../Modals/BranchModals';
+import { CreateProjectModal } from '../Modals/CreateProjectModal';
+import { CloneRepoModal } from '../Modals/CloneRepoModal';
 
 export const Topbar: React.FC = () => {
   const { projectInfo, openDirectoryPicker, openVirtualProject, isOpen } = useRepository();
@@ -30,6 +34,8 @@ export const Topbar: React.FC = () => {
   const [isBranchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [isRepoDropdownOpen, setRepoDropdownOpen] = useState(false);
   const [isCreateBranchOpen, setCreateBranchOpen] = useState(false);
+  const [isCreateProjectOpen, setCreateProjectOpen] = useState(false);
+  const [isCloneRepoOpen, setCloneRepoOpen] = useState(false);
 
   const branchRef = useRef<HTMLDivElement>(null);
   const repoRef = useRef<HTMLDivElement>(null);
@@ -125,10 +131,32 @@ export const Topbar: React.FC = () => {
                   style={{ width: '100%', justifyContent: 'flex-start' }}
                   onClick={() => {
                     setRepoDropdownOpen(false);
+                    setCreateProjectOpen(true);
+                  }}
+                >
+                  <PlusCircle size={14} />
+                  <span>Create New Repository...</span>
+                </button>
+                <button
+                  className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setRepoDropdownOpen(false);
+                    setCloneRepoOpen(true);
+                  }}
+                >
+                  <GitPullRequest size={14} />
+                  <span>Clone Repository...</span>
+                </button>
+                <button
+                  className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setRepoDropdownOpen(false);
                     openVirtualProject('react-vite-demo');
                   }}
                 >
-                  <Plus size={14} />
+                  <PlusCircle size={14} />
                   <span>Open Virtual Starter Repo</span>
                 </button>
               </div>
@@ -252,6 +280,8 @@ export const Topbar: React.FC = () => {
       </header>
 
       <CreateBranchModal isOpen={isCreateBranchOpen} onClose={() => setCreateBranchOpen(false)} />
+      <CreateProjectModal isOpen={isCreateProjectOpen} onClose={() => setCreateProjectOpen(false)} />
+      <CloneRepoModal isOpen={isCloneRepoOpen} onClose={() => setCloneRepoOpen(false)} />
     </>
   );
 };

@@ -43,4 +43,5 @@ export interface GitService {
   createTag(name: string, ref?: string, message?: string): Promise<void>;
   deleteTag(name: string): Promise<void>;
   discard(paths: string[]): Promise<void>;
+  clone(options: { url: string; dir?: string; corsProxy?: string; token?: string; depth?: number }): Promise<void>;
 }

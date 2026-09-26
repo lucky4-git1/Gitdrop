@@ -676,4 +676,19 @@ export class BrowserGitAdapter implements GitService {
       }
     }
   }
+
+  public async clone(options: { url: string; dir?: string; corsProxy?: string; token?: string; depth?: number }): Promise<void> {
+    logger.info('git', `git clone ${options.url}`);
+    await git.clone({
+      fs: this.gitFs,
+      http,
+      dir: options.dir || this.dir,
+      url: options.url,
+      corsProxy: options.corsProxy || 'https://cors.isomorphic-git.org',
+      onAuth: () => ({ username: options?.token || '' }),
+      depth: options.depth || 50,
+      singleBranch: true,
+    });
+    logger.info('git', `Cloned repository into ${options.dir || this.dir}`);
+  }
 }

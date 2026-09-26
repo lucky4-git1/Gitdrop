@@ -10,9 +10,13 @@ import {
   ArrowRight,
   HardDrive,
   FileCode,
+  PlusCircle,
+  GitPullRequest,
 } from 'lucide-react';
 import { InitRepoModal } from '@/components/Modals/InitRepoModal';
 import { GitignoreModal } from '@/components/Modals/GitignoreModal';
+import { CreateProjectModal } from '@/components/Modals/CreateProjectModal';
+import { CloneRepoModal } from '@/components/Modals/CloneRepoModal';
 
 export const LandingPage: React.FC = () => {
   const {
@@ -27,6 +31,8 @@ export const LandingPage: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isInitModalOpen, setInitModalOpen] = useState(false);
   const [isGitignoreModalOpen, setGitignoreModalOpen] = useState(false);
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [isCloneModalOpen, setCloneModalOpen] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -205,16 +211,35 @@ export const LandingPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
           <button
             className="btn-gitdrop btn-gitdrop-primary"
-            style={{ padding: '8px 24px', fontSize: '13px', width: '220px' }}
+            style={{ padding: '8px 24px', fontSize: '13px', width: '240px' }}
             onClick={openDirectoryPicker}
           >
             <FolderOpen size={16} />
             Open Local Folder
           </button>
 
+          <div style={{ display: 'flex', gap: '8px', width: '240px' }}>
+            <button
+              className="btn-gitdrop"
+              style={{ flex: 1, fontSize: '12px', padding: '6px 12px' }}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              <PlusCircle size={14} />
+              Create Repo
+            </button>
+            <button
+              className="btn-gitdrop"
+              style={{ flex: 1, fontSize: '12px', padding: '6px 12px' }}
+              onClick={() => setCloneModalOpen(true)}
+            >
+              <GitPullRequest size={14} />
+              Clone Repo
+            </button>
+          </div>
+
           <button
             className="btn-gitdrop btn-gitdrop-subtle"
-            style={{ fontSize: '12px', color: 'var(--accent-text)' }}
+            style={{ fontSize: '12px', color: 'var(--accent-text)', marginTop: '4px' }}
             onClick={() => openVirtualProject('react-vite-demo')}
           >
             <Sparkles size={14} />
@@ -249,6 +274,8 @@ export const LandingPage: React.FC = () => {
 
       <InitRepoModal isOpen={isInitModalOpen} onClose={() => setInitModalOpen(false)} />
       <GitignoreModal isOpen={isGitignoreModalOpen} onClose={() => setGitignoreModalOpen(false)} />
+      <CreateProjectModal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} />
+      <CloneRepoModal isOpen={isCloneModalOpen} onClose={() => setCloneModalOpen(false)} />
     </div>
   );
 };
