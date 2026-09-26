@@ -11,6 +11,7 @@ import {
 } from '@/types/git';
 
 export interface GitService {
+  ensureGitInitialized(defaultBranch?: string): Promise<void>;
   init(options?: { defaultBranch?: string; user?: { name: string; email: string } }): Promise<void>;
   status(): Promise<GitStatusSummary>;
   add(paths: string[]): Promise<void>;

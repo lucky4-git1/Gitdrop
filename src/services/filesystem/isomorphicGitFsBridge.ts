@@ -32,11 +32,15 @@ export function createIsomorphicGitFs(fs: IFileSystem) {
     },
     readlink: async (path: string) => {
       if (fs.readlink) return fs.readlink(path);
-      throw new Error(`ENOSYS: readlink not supported`);
+      const err: any = new Error(`ENOSYS: readlink not supported`);
+      err.code = 'ENOSYS';
+      throw err;
     },
     symlink: async (target: string, path: string) => {
       if (fs.symlink) return fs.symlink(target, path);
-      throw new Error(`ENOSYS: symlink not supported`);
+      const err: any = new Error(`ENOSYS: symlink not supported`);
+      err.code = 'ENOSYS';
+      throw err;
     },
   };
 

@@ -137,7 +137,12 @@ export const GitConsole: React.FC = () => {
               <div key={entry.id} style={{ display: 'flex', gap: '8px', wordBreak: 'break-all' }}>
                 <span style={{ color: 'var(--text-muted)', userSelect: 'none' }}>{entry.timestamp}</span>
                 <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>[{entry.source}]</span>
-                <span style={{ color }}>{entry.message}</span>
+                <span style={{ color }}>
+                  {entry.message}
+                  {entry.details && typeof entry.details === 'string' && entry.details !== entry.message
+                    ? ` — ${entry.details}`
+                    : ''}
+                </span>
               </div>
             );
           })

@@ -40,6 +40,11 @@ export class FileSystemAccessFS implements IFileSystem {
           currentHandle = await currentHandle.getDirectoryHandle(part, { create });
           this.dirCache.set(accumulated, currentHandle);
         } catch (_err: any) {
+          if (_err?.name === 'TypeMismatchError') {
+            const e: any = new Error(`ENOTDIR: not a directory, open directory '${dirpath}'`);
+            e.code = 'ENOTDIR';
+            throw e;
+          }
           const e: any = new Error(`ENOENT: no such file or directory, open directory '${dirpath}'`);
           e.code = 'ENOENT';
           throw e;
@@ -55,7 +60,15 @@ export class FileSystemAccessFS implements IFileSystem {
     const dir = dirname(norm);
     const file = basename(norm);
 
-    const dirHandle = await this.getDirectory(dir, false);
+    let dirHandle: FileSystemDirectoryHandle;
+    try {
+      dirHandle = await this.getDirectory(dir, false);
+    } catch {
+      const e: any = new Error(`ENOENT: no such file or directory, open '${filepath}'`);
+      e.code = 'ENOENT';
+      throw e;
+    }
+
     try {
       const fileHandle = await dirHandle.getFileHandle(file);
       const webFile = await fileHandle.getFile();
@@ -166,7 +179,14 @@ export class FileSystemAccessFS implements IFileSystem {
 
     const dir = dirname(norm);
     const name = basename(norm);
-    const dirHandle = await this.getDirectory(dir, false);
+    let dirHandle: FileSystemDirectoryHandle;
+    try {
+      dirHandle = await this.getDirectory(dir, false);
+    } catch {
+      const e: any = new Error(`ENOENT: no such file or directory, stat '${filepath}'`);
+      e.code = 'ENOENT';
+      throw e;
+    }
 
     // Try as file first
     try {

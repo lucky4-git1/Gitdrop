@@ -66,6 +66,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
       // 2. Add or update remote
       updateStep('remote', 'running');
+      await gitService?.ensureGitInitialized();
       await addRemote('origin', remoteUrl);
       updateStep('remote', 'done');
 

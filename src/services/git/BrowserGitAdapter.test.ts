@@ -94,5 +94,29 @@ describe('BrowserGitAdapter', () => {
     expect(commits.length).toBe(1);
     expect(commits[0].message.trim()).toBe('Initial commit via GitDrop');
   });
+
+  it('self-heals missing .git/HEAD and missing directories when status is read on a damaged or pre-configured repository', async () => {
+    const fs = new MemoryFS();
+    const adapter = new BrowserGitAdapter(fs, '/');
+
+    // Simulate directory where .git/config exists (e.g. from adding remote) but .git/HEAD is missing
+    await fs.mkdir('.git');
+    await fs.writeFile(
+      '.git/config',
+      '[remote "origin"]\n\turl = https://github.com/example/test.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n'
+    );
+    await fs.writeFile('app.js', 'console.log("hello");\n');
+
+    // status() should not throw NotFoundError: Could not find HEAD
+    const status = await adapter.status();
+    expect(status.branch).toBe('main');
+    expect(status.clean).toBe(false);
+    expect(status.unstaged.length).toBe(1);
+    expect(status.unstaged[0].path).toBe('app.js');
+
+    // Check that .git/HEAD was created
+    expect(await fs.exists('.git/HEAD')).toBe(true);
+  });
 });
+
 

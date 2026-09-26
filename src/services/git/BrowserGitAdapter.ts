@@ -31,9 +31,60 @@ export class BrowserGitAdapter implements GitService {
     this.diffService = new DiffService(fs, dir);
   }
 
+  public async ensureGitInitialized(defaultBranch = 'main'): Promise<void> {
+    try {
+      if (!(await this.fs.exists('.git'))) {
+        await this.fs.mkdir('.git');
+      }
+
+      const essentialFolders = [
+        '.git/hooks',
+        '.git/info',
+        '.git/objects/info',
+        '.git/objects/pack',
+        '.git/refs/heads',
+        '.git/refs/tags',
+      ];
+      for (const folder of essentialFolders) {
+        if (!(await this.fs.exists(folder))) {
+          await this.fs.mkdir(folder).catch(() => {});
+        }
+      }
+
+      if (!(await this.fs.exists('.git/HEAD'))) {
+        await this.fs.writeFile('.git/HEAD', `ref: refs/heads/${defaultBranch}\n`);
+        logger.info('git', `Self-healed missing .git/HEAD -> refs/heads/${defaultBranch}`);
+      }
+
+      if (!(await this.fs.exists('.git/config'))) {
+        await this.fs.writeFile(
+          '.git/config',
+          '[core]\n' +
+            '\trepositoryformatversion = 0\n' +
+            '\tfilemode = false\n' +
+            '\tbare = false\n' +
+            '\tlogallrefupdates = true\n' +
+            '\tsymlinks = false\n' +
+            '\tignorecase = true\n'
+        );
+      }
+
+      // Sensible default exclude if neither .gitignore nor .git/info/exclude exists
+      if (!(await this.fs.exists('.gitignore')) && !(await this.fs.exists('.git/info/exclude'))) {
+        await this.fs.writeFile(
+          '.git/info/exclude',
+          '# GitDrop Default Excludes\nnode_modules/\ndist/\n.next/\nbuild/\ntarget/\n*.log\n.DS_Store\nThumbs.db\n'
+        ).catch(() => {});
+      }
+    } catch (err: any) {
+      logger.warn('git', `ensureGitInitialized warning: ${err?.message || err}`);
+    }
+  }
+
   public async init(options?: { defaultBranch?: string; user?: { name: string; email: string } }): Promise<void> {
     const branch = options?.defaultBranch || 'main';
     logger.info('git', `git init --initial-branch=${branch}`);
+    await this.ensureGitInitialized(branch);
     await git.init({
       fs: this.gitFs,
       dir: this.dir,
@@ -61,6 +112,9 @@ export class BrowserGitAdapter implements GitService {
 
   public async status(): Promise<GitStatusSummary> {
     try {
+      if (await this.fs.exists('.git')) {
+        await this.ensureGitInitialized();
+      }
       const branchName = await this.currentBranch();
       const matrix = await git.statusMatrix({
         fs: this.gitFs,
@@ -110,12 +164,13 @@ export class BrowserGitAdapter implements GitService {
         upstream,
       };
     } catch (err: any) {
-      logger.error('git', 'Error reading git status', err.message);
+      logger.error('git', `Error reading git status: ${err?.message || err}`, err);
       throw err;
     }
   }
 
   public async add(paths: string[]): Promise<void> {
+    await this.ensureGitInitialized();
     logger.info('git', `git add ${paths.join(' ')}`);
     for (const filepath of paths) {
       const exists = await this.fs.exists(filepath);
@@ -151,6 +206,7 @@ export class BrowserGitAdapter implements GitService {
     message: string,
     options?: { amend?: boolean; author?: { name: string; email: string } }
   ): Promise<Commit> {
+    await this.ensureGitInitialized();
     if (!message || message.trim() === '') {
       throw new Error('Aborting commit due to empty commit message.');
     }
@@ -582,6 +638,7 @@ export class BrowserGitAdapter implements GitService {
 
   public async addRemote(name: string, url: string): Promise<void> {
     logger.info('git', `git remote add ${name} ${url}`);
+    await this.ensureGitInitialized();
     const existing = await this.remotes().catch(() => []);
     if (existing.some((r) => r.name === name)) {
       await this.removeRemote(name).catch(() => {});
@@ -651,6 +708,7 @@ export class BrowserGitAdapter implements GitService {
     token?: string;
     author?: { name: string; email: string };
   }): Promise<void> {
+    await this.ensureGitInitialized(options?.branch || 'main');
     const remote = options?.remote || 'origin';
     const current = await this.currentBranch();
     let branch = options?.branch || current || 'main';
