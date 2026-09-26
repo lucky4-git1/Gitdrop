@@ -38,7 +38,7 @@ export interface GitService {
   removeRemote(name: string): Promise<void>;
   fetch(options?: { remote?: string; corsProxy?: string; token?: string }): Promise<void>;
   pull(options?: { remote?: string; branch?: string; corsProxy?: string; token?: string }): Promise<void>;
-  push(options?: { remote?: string; branch?: string; force?: boolean; corsProxy?: string; token?: string }): Promise<void>;
+  push(options?: { remote?: string; branch?: string; force?: boolean; corsProxy?: string; token?: string; author?: { name: string; email: string } }): Promise<void>;
   tags(): Promise<Tag[]>;
   createTag(name: string, ref?: string, message?: string): Promise<void>;
   deleteTag(name: string): Promise<void>;

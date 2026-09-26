@@ -73,4 +73,26 @@ describe('BrowserGitAdapter', () => {
     const tags = await adapter.tags();
     expect(tags.some((t) => t.name === 'v1.0.0')).toBe(true);
   });
+
+  it('auto-commits unstaged files when push is initiated on a fresh repository without commits', async () => {
+    const fs = new MemoryFS();
+    const adapter = new BrowserGitAdapter(fs, '/');
+
+    await adapter.init({
+      defaultBranch: 'main',
+      user: { name: 'Alice Developer', email: 'alice@example.com' },
+    });
+
+    // Create unstaged file
+    await fs.writeFile('README.md', '# GitDrop Auto Commit Test\n');
+
+    // Attempt push without manual commit. Since remote is not real, push fails at network,
+    // but the initial commit must have been created in the local repository.
+    await expect(adapter.push({ remote: 'origin', branch: 'main' })).rejects.toThrow();
+
+    const commits = await adapter.log();
+    expect(commits.length).toBe(1);
+    expect(commits[0].message.trim()).toBe('Initial commit via GitDrop');
+  });
 });
+

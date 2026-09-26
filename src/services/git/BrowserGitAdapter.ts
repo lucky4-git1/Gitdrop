@@ -649,6 +649,7 @@ export class BrowserGitAdapter implements GitService {
     force?: boolean;
     corsProxy?: string;
     token?: string;
+    author?: { name: string; email: string };
   }): Promise<void> {
     const remote = options?.remote || 'origin';
     const current = await this.currentBranch();
@@ -667,9 +668,22 @@ export class BrowserGitAdapter implements GitService {
     }
 
     // Check if the branch has any commits to push
-    const branchOid = await git.resolveRef({ fs: this.gitFs, dir: this.dir, ref: branch }).catch(() => null);
+    let branchOid = await git.resolveRef({ fs: this.gitFs, dir: this.dir, ref: branch }).catch(() => null);
     if (!branchOid) {
-      throw new Error(`Branch "${branch}" has no commits yet. Please commit your changes before pushing.`);
+      logger.info('git', `Branch "${branch}" has no commits yet. Auto-staging and creating initial commit...`);
+      const status = await this.status().catch(() => null);
+      if (status && (status.unstaged.length > 0 || status.staged.length > 0)) {
+        const filesToStage = status.unstaged.map((f) => f.path);
+        if (filesToStage.length > 0) {
+          await this.add(filesToStage);
+        }
+        await this.commit('Initial commit via GitDrop', { author: options?.author });
+        branchOid = await git.resolveRef({ fs: this.gitFs, dir: this.dir, ref: branch }).catch(() => null);
+      }
+    }
+
+    if (!branchOid) {
+      throw new Error(`Branch "${branch}" has no commits and no files to commit. Please add files to your project before pushing.`);
     }
 
     logger.info('git', `git push ${options?.force ? '--force ' : ''}${remote} ${branch}`);

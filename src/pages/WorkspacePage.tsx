@@ -80,6 +80,8 @@ export const WorkspacePage: React.FC = () => {
                 <span>
                   {operationState.type === 'push' && operationState.status === 'running'
                     ? 'Pushing...'
+                    : commits.length === 0
+                    ? 'Commit & Push to Remote'
                     : 'Push to Remote'}
                 </span>
               </button>
@@ -207,7 +209,11 @@ export const WorkspacePage: React.FC = () => {
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   Branch <strong>{currentBranch}</strong>
-                  {(status?.ahead || 0) > 0 ? ` • ${status?.ahead} unpushed commit${(status?.ahead || 0) > 1 ? 's' : ''}` : ' • Ready to push / sync'}
+                  {commits.length === 0
+                    ? ' • No commits yet — click to commit and push'
+                    : (status?.ahead || 0) > 0
+                    ? ` • ${status?.ahead} unpushed commit${(status?.ahead || 0) > 1 ? 's' : ''}`
+                    : ' • Ready to push / sync'}
                 </div>
               </div>
             </div>
@@ -217,7 +223,13 @@ export const WorkspacePage: React.FC = () => {
               disabled={operationState.status === 'running'}
             >
               <ArrowUpRight size={13} />
-              <span>{operationState.type === 'push' && operationState.status === 'running' ? 'Pushing...' : 'Push Commits'}</span>
+              <span>
+                {operationState.type === 'push' && operationState.status === 'running'
+                  ? 'Pushing...'
+                  : commits.length === 0
+                  ? 'Commit & Push'
+                  : 'Push Commits'}
+              </span>
             </button>
           </div>
         )}

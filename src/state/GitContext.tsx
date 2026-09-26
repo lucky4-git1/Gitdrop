@@ -336,11 +336,12 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             force: options?.force,
             corsProxy: config.corsProxy,
             token: session?.token,
+            author: { name: config.userName, email: config.userEmail },
           }),
         'Push Rejected'
       );
     },
-    [gitService, config.corsProxy, session?.token, currentBranch]
+    [gitService, config.corsProxy, config.userName, config.userEmail, session?.token, currentBranch]
   );
 
   const pull = useCallback(
