@@ -113,7 +113,12 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
       // 3. Stage files
       updateStep('stage', 'running');
-      await stageAll();
+      const statToStage = await gitService?.status().catch(() => null);
+      if (statToStage && statToStage.unstaged.length > 0) {
+        await gitService?.add(statToStage.unstaged.map((f) => f.path));
+      } else {
+        await stageAll();
+      }
       updateStep('stage', 'done');
 
       // 4. Commit
