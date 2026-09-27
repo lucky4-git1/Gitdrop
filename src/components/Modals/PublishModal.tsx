@@ -12,7 +12,7 @@ interface PublishModalProps {
 
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
   const { projectInfo, gitService } = useRepository();
-  const { session, createRemoteRepo } = useAuth();
+  const { isAuthenticated, createRemoteRepo } = useAuth();
   const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
 
   const [name, setName] = useState(projectInfo?.name || 'my-project');
@@ -30,7 +30,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
   const handlePublish = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!session?.token) return;
+    if (!isAuthenticated) return;
 
     setIsPublishing(true);
     setErrorMessage(null);

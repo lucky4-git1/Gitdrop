@@ -10,6 +10,7 @@ import { ConfirmModal } from '../Modals/ConfirmModal';
 import { ErrorModal } from '../Modals/ErrorModal';
 import { CommandPalette } from '../Modals/CommandPalette';
 import { GlobalSearch } from '../Modals/GlobalSearch';
+import { GlobalDropOverlay } from './GlobalDropOverlay';
 
 // Pages
 import { LandingPage } from '@/pages/LandingPage';
@@ -54,6 +55,12 @@ export const AppShell: React.FC = () => {
 
   const renderActiveView = () => {
     if (!isOpen) {
+      if (activeView === 'files') {
+        return <FilesPage />;
+      }
+      if (activeView === 'settings') {
+        return <SettingsPage />;
+      }
       return <LandingPage />;
     }
 
@@ -86,7 +93,7 @@ export const AppShell: React.FC = () => {
       <Topbar />
 
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {isOpen && <Sidebar />}
+        {(isOpen || activeView === 'files' || activeView === 'settings') && <Sidebar />}
         <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', backgroundColor: 'var(--bg-primary)' }}>
           {renderActiveView()}
         </main>
@@ -100,6 +107,7 @@ export const AppShell: React.FC = () => {
       <ErrorModal />
       <CommandPalette />
       <GlobalSearch />
+      <GlobalDropOverlay />
     </div>
   );
 };

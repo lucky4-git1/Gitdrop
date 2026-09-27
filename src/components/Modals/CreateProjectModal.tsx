@@ -14,7 +14,7 @@ interface CreateProjectModalProps {
 }
 
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose }) => {
-  const { session, createRemoteRepo, isAuthenticated } = useAuth();
+  const { createRemoteRepo, isAuthenticated, getCredentialForGit } = useAuth();
   const { config } = useConfig();
   const { setActiveView } = useUI();
   const { openVirtualProject, openDirectoryHandle } = useRepository();
@@ -69,7 +69,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, 
         await git.commit('Initial commit via GitDrop');
 
         // Create on GitHub if selected
-        if (createOnGitHub && session?.token) {
+        if (createOnGitHub && isAuthenticated) {
           setStatusText(`Creating or connecting repository "${projectName}" on GitHub...`);
           const ghRepo = await createRemoteRepo({
             name: projectName,
@@ -77,12 +77,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, 
           });
           await git.addRemote('origin', ghRepo.cloneUrl);
           setStatusText('Pushing initial commit to GitHub...');
+          const token = await getCredentialForGit();
           try {
             await git.push({
               remote: 'origin',
               branch: config.defaultBranch || 'main',
               corsProxy: config.corsProxy,
-              token: session.token,
+              token: token || undefined,
             });
           } catch (pushErr: any) {
             alert(`Repository created on GitHub and locally, but initial push failed: ${pushErr.message}\n\nYou can click 'Push to Remote' in the workspace once ready.`);
@@ -95,7 +96,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, 
         await openVirtualProject(projectName);
 
         // If GitHub selected
-        if (createOnGitHub && session?.token) {
+        if (createOnGitHub && isAuthenticated) {
           setStatusText(`Creating repository "${projectName}" on GitHub...`);
           await createRemoteRepo({
             name: projectName,

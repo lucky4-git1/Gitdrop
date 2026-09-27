@@ -40,6 +40,6 @@ describe('UI Component Rendering', () => {
   it('renders Topbar with GitDrop branding and search trigger', () => {
     renderWithProviders(<Topbar />);
     expect(screen.getByText('GitDrop')).toBeInTheDocument();
-    expect(screen.getByText('Select Repository')).toBeInTheDocument();
+    expect(screen.getByText(/Select (Project|Repository)/i)).toBeInTheDocument();
   });
 });

@@ -42,6 +42,37 @@ export interface RemoteAuthSession {
   createdAt: number;
 }
 
+export type AuthStatus =
+  | 'unknown'
+  | 'authenticated'
+  | 'unauthenticated'
+  | 'expired'
+  | 'error';
+
+export interface GitHubCredential {
+  id: string;
+  token: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GitHubAuthProfile {
+  username: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  scopes?: string[];
+  authenticatedAt: string;
+  credentialReference: string;
+}
+
+export interface CredentialStore {
+  saveGitHubCredential(credential: GitHubCredential): Promise<void>;
+  getGitHubCredential(): Promise<GitHubCredential | null>;
+  removeGitHubCredential(): Promise<void>;
+  hasGitHubCredential(): Promise<boolean>;
+}
+
 export interface IRemoteProvider {
   name: string;
   authenticate(token: string): Promise<RemoteAuthSession>;
@@ -50,3 +81,4 @@ export interface IRemoteProvider {
   createRepository(token: string, options: CreateRepositoryOptions): Promise<RemoteRepository>;
   getRepository(token: string, owner: string, name: string): Promise<RemoteRepository>;
 }
+

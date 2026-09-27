@@ -9,7 +9,7 @@ import { Github } from '@/components/Icons/GithubIcon';
 export const StatusBar: React.FC = () => {
   const { currentBranch, status } = useGit();
   const { isOpen } = useRepository();
-  const { isAuthenticated, session } = useAuth();
+  const { isAuthenticated, profile, authStatus } = useAuth();
   const { setActiveView } = useUI();
 
   if (!isOpen) {
@@ -119,11 +119,39 @@ export const StatusBar: React.FC = () => {
         <div
           onClick={() => setActiveView('settings')}
           style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
-          title={isAuthenticated ? `Connected as @${session?.user.login}` : 'Connect GitHub'}
+          title={
+            isAuthenticated
+              ? `Connected as @${profile?.username}`
+              : authStatus === 'expired'
+              ? 'GitHub credential expired - click to reconnect'
+              : 'Connect GitHub'
+          }
         >
-          <Github size={12} color={isAuthenticated ? 'var(--success-text)' : 'var(--text-muted)'} />
-          <span style={{ color: isAuthenticated ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-            {isAuthenticated ? `@${session?.user.login}` : 'GitHub not connected'}
+          <Github
+            size={12}
+            color={
+              isAuthenticated
+                ? 'var(--success-text)'
+                : authStatus === 'expired'
+                ? 'var(--warning-text)'
+                : 'var(--text-muted)'
+            }
+          />
+          <span
+            style={{
+              color:
+                isAuthenticated
+                  ? 'var(--text-primary)'
+                  : authStatus === 'expired'
+                  ? 'var(--warning-text)'
+                  : 'var(--text-muted)',
+            }}
+          >
+            {isAuthenticated
+              ? `@${profile?.username}`
+              : authStatus === 'expired'
+              ? 'Auth expired'
+              : 'GitHub not connected'}
           </span>
         </div>
 

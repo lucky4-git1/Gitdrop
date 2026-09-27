@@ -59,7 +59,7 @@ const GitContext = createContext<GitContextType | null>(null);
 export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { gitService, projectInfo } = useRepository();
   const { config } = useConfig();
-  const { session } = useAuth();
+  const { getCredentialForGit } = useAuth();
   const { showError } = useUI();
 
   const [status, setStatus] = useState<GitStatusSummary | null>(null);
@@ -327,6 +327,7 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     async (options?: { remote?: string; branch?: string; force?: boolean }) => {
       if (!gitService) return;
       const targetBranch = options?.branch || currentBranch || (await gitService.currentBranch().catch(() => 'main'));
+      const token = (await getCredentialForGit()) || undefined;
       await runOperation(
         'push',
         () =>
@@ -335,18 +336,19 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             branch: targetBranch,
             force: options?.force,
             corsProxy: config.corsProxy,
-            token: session?.token,
+            token,
             author: { name: config.userName, email: config.userEmail },
           }),
         'Push Rejected'
       );
     },
-    [gitService, config.corsProxy, config.userName, config.userEmail, session?.token, currentBranch]
+    [gitService, config.corsProxy, config.userName, config.userEmail, getCredentialForGit, currentBranch]
   );
 
   const pull = useCallback(
     async (options?: { remote?: string; branch?: string }) => {
       if (!gitService) return;
+      const token = (await getCredentialForGit()) || undefined;
       await runOperation(
         'pull',
         () =>
@@ -354,29 +356,30 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             remote: options?.remote,
             branch: options?.branch,
             corsProxy: config.corsProxy,
-            token: session?.token,
+            token,
           }),
         'Pull Failed'
       );
     },
-    [gitService, config.corsProxy, session?.token]
+    [gitService, config.corsProxy, getCredentialForGit]
   );
 
   const fetch = useCallback(
     async (remote?: string) => {
       if (!gitService) return;
+      const token = (await getCredentialForGit()) || undefined;
       await runOperation(
         'fetch',
         () =>
           gitService.fetch({
             remote,
             corsProxy: config.corsProxy,
-            token: session?.token,
+            token,
           }),
         'Fetch Failed'
       );
     },
-    [gitService, config.corsProxy, session?.token]
+    [gitService, config.corsProxy, getCredentialForGit]
   );
 
   return (

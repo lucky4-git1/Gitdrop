@@ -11,6 +11,10 @@ const DEFAULT_CONFIG: GitConfig = {
   userEmail: 'dev@gitdrop.local',
   defaultBranch: 'main',
   corsProxy: 'https://cors.isomorphic-git.org',
+  startupBehavior: 'lastProject',
+  confirmDestructive: true,
+  detectExternalChanges: true,
+  autoRefreshStatus: true,
 };
 
 const ConfigContext = createContext<ConfigContextType | null>(null);

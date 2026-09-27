@@ -14,7 +14,7 @@ interface CloneRepoModalProps {
 }
 
 export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({ isOpen, onClose }) => {
-  const { session, userRepos, isAuthenticated } = useAuth();
+  const { userRepos, isAuthenticated, getCredentialForGit } = useAuth();
   const { config } = useConfig();
   const { setActiveView } = useUI();
   const { openDirectoryHandle } = useRepository();
@@ -54,11 +54,12 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({ isOpen, onClose 
         const fs = new MemoryFS();
         const git = new BrowserGitAdapter(fs, '/');
 
+        const token = await getCredentialForGit();
         await git.clone({
           url: url.trim(),
           dir: '/',
           corsProxy: config.corsProxy,
-          token: session?.token,
+          token: token || undefined,
           depth: 50,
         });
 

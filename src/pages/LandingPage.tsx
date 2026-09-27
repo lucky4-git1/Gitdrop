@@ -12,6 +12,7 @@ import {
   FileCode,
   PlusCircle,
   GitPullRequest,
+  ShieldAlert,
 } from 'lucide-react';
 import { InitRepoModal } from '@/components/Modals/InitRepoModal';
 import { GitignoreModal } from '@/components/Modals/GitignoreModal';
@@ -24,6 +25,11 @@ export const LandingPage: React.FC = () => {
     openDirectoryHandle,
     openVirtualProject,
     projectInfo,
+    activeProject,
+    projects,
+    switchProject,
+    needsPermission,
+    requestActivePermission,
     isOpen,
   } = useRepository();
   const { setActiveView } = useUI();
@@ -186,6 +192,106 @@ export const LandingPage: React.FC = () => {
                   <ArrowRight size={14} />
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Folder Permission Required Alert */}
+        {needsPermission && activeProject && (
+          <div
+            style={{
+              marginBottom: '20px',
+              backgroundColor: 'var(--warning-subtle)',
+              border: '1px solid var(--warning-text)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '16px 20px',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ShieldAlert size={24} color="var(--warning-text)" />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--warning-text)' }}>
+                  Folder permission required
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Grant browser permission to access <strong>{activeProject.name}</strong> to resume work
+                </div>
+              </div>
+            </div>
+            <button className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm" onClick={requestActivePermission}>
+              Grant Access
+            </button>
+          </div>
+        )}
+
+        {/* Your Projects (If user has remembered projects) */}
+        {!isOpen && projects.length > 0 && (
+          <div
+            style={{
+              marginBottom: '20px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '18px 20px',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HardDrive size={16} color="var(--accent-text)" />
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Your Projects</h3>
+              </div>
+              <button
+                className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                onClick={() => setActiveView('files')}
+                style={{ fontSize: '11px', color: 'var(--accent-text)' }}
+              >
+                View all ({projects.length}) →
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {projects.slice(0, 3).map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => switchProject(p.id)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <HardDrive size={14} color="var(--accent-text)" />
+                    <span style={{ fontWeight: 600, fontSize: '13px' }}>{p.displayName || p.name}</span>
+                    {p.branch && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({p.branch})</span>
+                    )}
+                  </div>
+                  <span
+                    className="badge-gitdrop"
+                    style={{
+                      fontSize: '10px',
+                      backgroundColor:
+                        (p.statusSummary?.changesCount || 0) > 0 ? 'var(--warning-subtle)' : 'var(--success-subtle)',
+                      color:
+                        (p.statusSummary?.changesCount || 0) > 0 ? 'var(--warning-text)' : 'var(--success-text)',
+                    }}
+                  >
+                    {(p.statusSummary?.changesCount || 0) > 0 ? `${p.statusSummary?.changesCount} changes` : 'Clean'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -15,13 +15,21 @@ import {
   Plus,
   PlusCircle,
   GitPullRequest,
+  Check,
 } from 'lucide-react';
 import { CreateBranchModal } from '../Modals/BranchModals';
 import { CreateProjectModal } from '../Modals/CreateProjectModal';
 import { CloneRepoModal } from '../Modals/CloneRepoModal';
 
 export const Topbar: React.FC = () => {
-  const { projectInfo, openDirectoryPicker, openVirtualProject, isOpen } = useRepository();
+  const {
+    projects,
+    activeProject,
+    switchProject,
+    projectInfo,
+    openDirectoryPicker,
+    isOpen,
+  } = useRepository();
   const { currentBranch, branches, checkoutBranch } = useGit();
   const {
     theme,
@@ -95,7 +103,11 @@ export const Topbar: React.FC = () => {
               style={{ fontWeight: 500, color: 'var(--text-primary)' }}
             >
               <FolderGit2 size={14} color="var(--accent-text)" />
-              <span>{isOpen ? projectInfo?.name : 'Select Repository'}</span>
+              <span>
+                {isOpen
+                  ? activeProject?.displayName || activeProject?.name || projectInfo?.name
+                  : 'Select Project'}
+              </span>
               <ChevronDown size={12} color="var(--text-muted)" />
             </button>
 
@@ -110,11 +122,66 @@ export const Topbar: React.FC = () => {
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: 'var(--shadow-md)',
-                  minWidth: '220px',
+                  minWidth: '260px',
                   zIndex: 100,
-                  padding: '4px',
+                  padding: '6px',
                 }}
               >
+                {/* Recent Projects List */}
+                <div
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  RECENT PROJECTS
+                </div>
+
+                {projects.length > 0 ? (
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '6px' }}>
+                    {projects.slice(0, 8).map((p) => {
+                      const isCur = activeProject?.id === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'space-between',
+                            fontWeight: isCur ? 600 : 400,
+                            backgroundColor: isCur ? 'var(--accent-subtle)' : 'transparent',
+                            color: isCur ? 'var(--accent-text)' : 'var(--text-primary)',
+                          }}
+                          onClick={() => {
+                            setRepoDropdownOpen(false);
+                            switchProject(p.id);
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                            {isCur ? <Check size={12} color="var(--accent-text)" /> : <div style={{ width: 12 }} />}
+                            <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              {p.displayName || p.name}
+                            </span>
+                          </div>
+                          {p.branch && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{p.branch}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ padding: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    No recent projects
+                  </div>
+                )}
+
+                <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }} />
+
+                {/* Actions */}
                 <button
                   className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
                   style={{ width: '100%', justifyContent: 'flex-start' }}
@@ -153,11 +220,11 @@ export const Topbar: React.FC = () => {
                   style={{ width: '100%', justifyContent: 'flex-start' }}
                   onClick={() => {
                     setRepoDropdownOpen(false);
-                    openVirtualProject('react-vite-demo');
+                    setActiveView('files');
                   }}
                 >
-                  <PlusCircle size={14} />
-                  <span>Open Virtual Starter Repo</span>
+                  <FolderGit2 size={14} />
+                  <span>Manage All Projects & Files</span>
                 </button>
               </div>
             )}

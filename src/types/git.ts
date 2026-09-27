@@ -108,4 +108,9 @@ export interface GitConfig {
   userEmail: string;
   defaultBranch: string;
   corsProxy: string;
+  startupBehavior?: 'lastProject' | 'defaultProject' | 'projectManager';
+  confirmDestructive?: boolean;
+  detectExternalChanges?: boolean;
+  autoRefreshStatus?: boolean;
 }
+

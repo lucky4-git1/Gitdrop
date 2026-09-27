@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRepository } from '@/state/RepositoryContext';
 import { useGit } from '@/state/GitContext';
 import { useUI } from '@/state/UIContext';
@@ -8,30 +8,45 @@ import DOMPurify from 'dompurify';
 import {
   Folder,
   FolderOpen,
-  File,
-  FileText,
   FileCode,
+  FileText,
   Save,
   Eye,
   Edit3,
   Columns,
   Check,
   RefreshCw,
+  FolderGit2,
+  FolderTree,
+  Copy,
+  Info,
 } from 'lucide-react';
 import { FileEntry } from '@/types/filesystem';
+import { ProjectsWorkspace } from '@/components/Projects/ProjectsWorkspace';
 
 export const FilesPage: React.FC = () => {
-  const { fileSystem } = useRepository();
-  const { refresh } = useGit();
+  const { fileSystem, activeProject, projectInfo } = useRepository();
+  const { refresh, status } = useGit();
   const { theme, selectedDiffFile, setSelectedDiffFile } = useUI();
 
+  // Active sub-tab in Files page: 'projects' vs 'explorer'
+  const [subView, setSubView] = useState<'projects' | 'explorer'>(() => (fileSystem ? 'explorer' : 'projects'));
   const [tree, setTree] = useState<FileEntry[]>([]);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['', 'src']));
   const [currentFile, setCurrentFile] = useState<string | null>(selectedDiffFile || 'README.md');
   const [fileContent, setFileContent] = useState<string>('');
+  const [fileStat, setFileStat] = useState<{ size?: number; modified?: string }>({});
   const [isSaved, setIsSaved] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [mdMode, setMdMode] = useState<'edit' | 'preview' | 'split'>('split');
+  const [copiedPath, setCopiedPath] = useState(false);
+
+  // If no project is open, default to projects workspace
+  useEffect(() => {
+    if (!fileSystem) {
+      setSubView('projects');
+    }
+  }, [fileSystem]);
 
   // Load directory tree recursively up to depth 4
   const loadTree = useCallback(async () => {
@@ -80,16 +95,23 @@ export const FilesPage: React.FC = () => {
     loadTree();
   }, [loadTree]);
 
-  // Load selected file content
+  // Load selected file content & metadata
   useEffect(() => {
     let isCancelled = false;
     async function loadContent() {
       if (!currentFile || !fileSystem) return;
       try {
-        const raw = await fileSystem.readFile(currentFile, { encoding: 'utf8' });
+        const [raw, stat] = await Promise.all([
+          fileSystem.readFile(currentFile, { encoding: 'utf8' }).catch(() => ''),
+          fileSystem.stat(currentFile).catch(() => null),
+        ]);
         const text = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
         if (!isCancelled) {
           setFileContent(text);
+          setFileStat({
+            size: stat?.size,
+            modified: stat ? new Date(stat.mtimeMs).toLocaleTimeString() : undefined,
+          });
           setIsSaved(true);
         }
       } catch {
@@ -131,6 +153,26 @@ export const FilesPage: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  const handleCopyFilePath = () => {
+    if (!currentFile) return;
+    const fullPath = activeProject?.path ? `${activeProject.path}/${currentFile}` : currentFile;
+    navigator.clipboard.writeText(fullPath);
+    setCopiedPath(true);
+    setTimeout(() => setCopiedPath(false), 2000);
+  };
+
+  // Determine file status in working tree
+  const fileGitStatus = useMemo(() => {
+    if (!currentFile || !status) return 'Clean';
+    if (status.conflicted.some((f) => f.path === currentFile)) return 'Conflicted';
+    if (status.staged.some((f) => f.path === currentFile)) return 'Staged';
+    if (status.unstaged.some((f) => f.path === currentFile)) {
+      const match = status.unstaged.find((f) => f.path === currentFile);
+      return match?.status === 'untracked' ? 'Untracked' : 'Modified';
+    }
+    return 'Clean';
+  }, [currentFile, status]);
 
   const getLanguage = (path: string): string => {
     const ext = path.split('.').pop()?.toLowerCase();
@@ -239,161 +281,280 @@ export const FilesPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      {/* Left Pane: File Tree Explorer */}
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      {/* Sub-navigation Header */}
       <div
         style={{
-          width: '260px',
-          borderRight: '1px solid var(--border)',
+          height: '38px',
+          borderBottom: '1px solid var(--border)',
           backgroundColor: 'var(--bg-secondary)',
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
           flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            height: '36px',
-            borderBottom: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 12px',
-            fontSize: '11px',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            letterSpacing: '0.5px',
-          }}
-        >
-          <span>Repository Files</span>
-          <button className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm" onClick={loadTree} title="Refresh File Tree">
-            <RefreshCw size={12} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+            style={{
+              fontWeight: subView === 'projects' ? 600 : 400,
+              backgroundColor: subView === 'projects' ? 'var(--bg-elevated)' : 'transparent',
+              color: subView === 'projects' ? 'var(--accent-text)' : 'var(--text-secondary)',
+            }}
+            onClick={() => setSubView('projects')}
+          >
+            <FolderGit2 size={14} />
+            <span>My Projects</span>
           </button>
-        </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
-          {tree.length === 0 ? (
-            <div style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '11px' }}>
-              No files found in workspace.
-            </div>
-          ) : (
-            renderTreeNodes(tree)
+          {fileSystem && (
+            <button
+              className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+              style={{
+                fontWeight: subView === 'explorer' ? 600 : 400,
+                backgroundColor: subView === 'explorer' ? 'var(--bg-elevated)' : 'transparent',
+                color: subView === 'explorer' ? 'var(--accent-text)' : 'var(--text-secondary)',
+              }}
+              onClick={() => setSubView('explorer')}
+            >
+              <FolderTree size={14} />
+              <span>Active Files ({activeProject?.displayName || activeProject?.name || projectInfo?.name})</span>
+            </button>
           )}
         </div>
+
+        {fileSystem && subView === 'explorer' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+              onClick={handleCopyFilePath}
+              title="Copy Full File Path"
+            >
+              {copiedPath ? <Check size={13} color="var(--success-text)" /> : <Copy size={13} />}
+              <span>{copiedPath ? 'Copied Path!' : 'Copy Path'}</span>
+            </button>
+            <button
+              className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+              onClick={handleSave}
+              disabled={isSaved || isSaving}
+            >
+              <Save size={13} />
+              <span>{isSaved ? 'Saved' : 'Save File'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Right Pane: Monaco Code Editor & Markdown Viewer */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-        {currentFile ? (
-          <>
-            {/* Editor Action Bar */}
+      {/* Main View Area */}
+      {subView === 'projects' ? (
+        <ProjectsWorkspace />
+      ) : (
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          {/* Left Pane: File Tree Explorer */}
+          <div
+            style={{
+              width: '260px',
+              borderRight: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-secondary)',
+              display: 'flex',
+              flexDirection: 'column',
+              flexShrink: 0,
+            }}
+          >
             <div
               style={{
                 height: '36px',
                 borderBottom: '1px solid var(--border)',
-                backgroundColor: 'var(--bg-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 14px',
-                flexShrink: 0,
+                padding: '0 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.5px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <File size={14} color="var(--accent-text)" />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {currentFile}
-                </span>
-                {!isSaved && (
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--warning-text)' }} title="Unsaved changes" />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isMarkdown && (
-                  <div style={{ display: 'flex', gap: '2px', marginRight: '6px' }}>
-                    <button
-                      className={`btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm ${mdMode === 'edit' ? 'btn-gitdrop-primary' : ''}`}
-                      onClick={() => setMdMode('edit')}
-                    >
-                      <Edit3 size={12} />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      className={`btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm ${mdMode === 'preview' ? 'btn-gitdrop-primary' : ''}`}
-                      onClick={() => setMdMode('preview')}
-                    >
-                      <Eye size={12} />
-                      <span>Preview</span>
-                    </button>
-                    <button
-                      className={`btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm ${mdMode === 'split' ? 'btn-gitdrop-primary' : ''}`}
-                      onClick={() => setMdMode('split')}
-                    >
-                      <Columns size={12} />
-                      <span>Split</span>
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
-                  onClick={handleSave}
-                  disabled={isSaving || isSaved}
-                >
-                  {isSaved ? <Check size={12} /> : <Save size={12} />}
-                  <span>{isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}</span>
-                </button>
-              </div>
+              <span>FILE EXPLORER</span>
+              <button
+                className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                style={{ padding: '2px 4px' }}
+                onClick={loadTree}
+                title="Refresh File Tree"
+              >
+                <RefreshCw size={12} />
+              </button>
             </div>
 
-            {/* Editor Workspace Area */}
-            <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
-              {/* Code Editor (if edit mode or split mode or non-markdown) */}
-              {(!isMarkdown || mdMode !== 'preview') && (
-                <div style={{ flex: 1, minHeight: 0, borderRight: isMarkdown && mdMode === 'split' ? '1px solid var(--border)' : 'none' }}>
-                  <Editor
-                    value={fileContent}
-                    language={getLanguage(currentFile)}
-                    theme={theme === 'light' ? 'light' : 'vs-dark'}
-                    onChange={(val) => {
-                      setFileContent(val || '');
-                      setIsSaved(false);
-                    }}
-                    options={{
-                      fontSize: 12,
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                    }}
-                  />
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 6px' }}>
+              {tree.length === 0 ? (
+                <div style={{ padding: '20px 10px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Loading files...
                 </div>
+              ) : (
+                renderTreeNodes(tree)
               )}
+            </div>
 
-              {/* Rendered Markdown Preview Area */}
-              {isMarkdown && (mdMode === 'preview' || mdMode === 'split') && (
+            {/* Selected File Details Footer */}
+            {currentFile && (
+              <div
+                style={{
+                  padding: '8px 12px',
+                  borderTop: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{currentFile}</span>
+                  <span
+                    className="badge-gitdrop"
+                    style={{
+                      fontSize: '10px',
+                      padding: '1px 5px',
+                      backgroundColor:
+                        fileGitStatus === 'Modified'
+                          ? 'var(--warning-subtle)'
+                          : fileGitStatus === 'Clean'
+                          ? 'var(--success-subtle)'
+                          : 'var(--accent-subtle)',
+                      color:
+                        fileGitStatus === 'Modified'
+                          ? 'var(--warning-text)'
+                          : fileGitStatus === 'Clean'
+                          ? 'var(--success-text)'
+                          : 'var(--accent-text)',
+                    }}
+                  >
+                    {fileGitStatus}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                  <span>{fileStat.size ? `${(fileStat.size / 1024).toFixed(1)} KB` : ''}</span>
+                  <span>{fileStat.modified ? `Modified ${fileStat.modified}` : ''}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Pane: Code / Markdown Editor */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+            {currentFile ? (
+              <>
+                {/* Editor Header Bar */}
                 <div
                   style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: '24px',
+                    height: '36px',
+                    borderBottom: '1px solid var(--border)',
                     backgroundColor: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    lineHeight: '1.6',
-                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 16px',
+                    fontSize: '12px',
                   }}
-                  dangerouslySetInnerHTML={{ __html: sanitizedMarkdownHtml }}
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-            Select a file on the left to edit or preview.
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{currentFile}</span>
+                    {!isSaved && (
+                      <span style={{ color: 'var(--warning-text)', fontSize: '11px' }}>● Unsaved</span>
+                    )}
+                  </div>
+
+                  {isMarkdown && (
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                        style={{ backgroundColor: mdMode === 'edit' ? 'var(--bg-elevated)' : 'transparent' }}
+                        onClick={() => setMdMode('edit')}
+                        title="Edit Code"
+                      >
+                        <Edit3 size={13} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                        style={{ backgroundColor: mdMode === 'preview' ? 'var(--bg-elevated)' : 'transparent' }}
+                        onClick={() => setMdMode('preview')}
+                        title="Rendered Preview"
+                      >
+                        <Eye size={13} />
+                        <span>Preview</span>
+                      </button>
+                      <button
+                        className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
+                        style={{ backgroundColor: mdMode === 'split' ? 'var(--bg-elevated)' : 'transparent' }}
+                        onClick={() => setMdMode('split')}
+                        title="Side-by-Side Split"
+                      >
+                        <Columns size={13} />
+                        <span>Split</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Editor Body */}
+                <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+                  {/* Monaco Editor Pane */}
+                  {(!isMarkdown || mdMode === 'edit' || mdMode === 'split') && (
+                    <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
+                      <Editor
+                        height="100%"
+                        language={getLanguage(currentFile)}
+                        theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                        value={fileContent}
+                        onChange={(value) => {
+                          setFileContent(value || '');
+                          setIsSaved(false);
+                        }}
+                        options={{
+                          fontSize: 13,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          wordWrap: 'on',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Markdown Preview Pane */}
+                  {isMarkdown && (mdMode === 'preview' || mdMode === 'split') && (
+                    <div
+                      style={{
+                        flex: 1,
+                        borderLeft: mdMode === 'split' ? '1px solid var(--border)' : 'none',
+                        padding: '24px 32px',
+                        overflowY: 'auto',
+                        backgroundColor: 'var(--bg-elevated)',
+                        color: 'var(--text-primary)',
+                        lineHeight: '1.6',
+                        fontSize: '14px',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: sanitizedMarkdownHtml }}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <Info size={32} style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0 }}>Select a file from the explorer to view or edit</p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
