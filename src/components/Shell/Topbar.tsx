@@ -16,10 +16,13 @@ import {
   PlusCircle,
   GitPullRequest,
   Check,
+  ArrowUpRight,
 } from 'lucide-react';
+import { Github } from '@/components/Icons/GithubIcon';
 import { CreateBranchModal } from '../Modals/BranchModals';
 import { CreateProjectModal } from '../Modals/CreateProjectModal';
 import { CloneRepoModal } from '../Modals/CloneRepoModal';
+import { PublishModal } from '../Modals/PublishModal';
 
 export const Topbar: React.FC = () => {
   const {
@@ -30,7 +33,7 @@ export const Topbar: React.FC = () => {
     openDirectoryPicker,
     isOpen,
   } = useRepository();
-  const { currentBranch, branches, checkoutBranch } = useGit();
+  const { currentBranch, branches, checkoutBranch, remotes, push, operationState } = useGit();
   const {
     theme,
     setTheme,
@@ -44,6 +47,7 @@ export const Topbar: React.FC = () => {
   const [isCreateBranchOpen, setCreateBranchOpen] = useState(false);
   const [isCreateProjectOpen, setCreateProjectOpen] = useState(false);
   const [isCloneRepoOpen, setCloneRepoOpen] = useState(false);
+  const [isPublishModalOpen, setPublishModalOpen] = useState(false);
 
   const branchRef = useRef<HTMLDivElement>(null);
   const repoRef = useRef<HTMLDivElement>(null);
@@ -303,6 +307,36 @@ export const Topbar: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Quick Push / Publish Action Button */}
+          {isOpen && (
+            remotes.length > 0 ? (
+              <button
+                className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+                onClick={() => push()}
+                disabled={operationState.status === 'running'}
+                title={`Push commits to ${remotes[0]?.name || 'origin'}`}
+                style={{ marginLeft: '4px' }}
+              >
+                <ArrowUpRight size={13} />
+                <span>
+                  {operationState.type === 'push' && operationState.status === 'running'
+                    ? 'Pushing...'
+                    : 'Push'}
+                </span>
+              </button>
+            ) : (
+              <button
+                className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+                onClick={() => setPublishModalOpen(true)}
+                title="Push this project to GitHub"
+                style={{ marginLeft: '4px' }}
+              >
+                <Github size={13} />
+                <span>Push to GitHub</span>
+              </button>
+            )
+          )}
         </div>
 
         {/* Right Section: Search, Command Palette, Theme, Settings */}
@@ -355,6 +389,7 @@ export const Topbar: React.FC = () => {
       <CreateBranchModal isOpen={isCreateBranchOpen} onClose={() => setCreateBranchOpen(false)} />
       <CreateProjectModal isOpen={isCreateProjectOpen} onClose={() => setCreateProjectOpen(false)} />
       <CloneRepoModal isOpen={isCloneRepoOpen} onClose={() => setCloneRepoOpen(false)} />
+      <PublishModal isOpen={isPublishModalOpen} onClose={() => setPublishModalOpen(false)} />
     </>
   );
 };

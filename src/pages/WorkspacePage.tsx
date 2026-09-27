@@ -63,21 +63,7 @@ export const WorkspacePage: React.FC = () => {
               <span>Refresh</span>
             </button>
 
-            {!projectInfo?.isGit ? (
-              <button
-                className="btn-gitdrop btn-gitdrop-primary"
-                onClick={() => setInitModalOpen(true)}
-                title="Initialize local Git repository"
-              >
-                <GitBranch size={14} />
-                <span>Initialize Git</span>
-              </button>
-            ) : remotes.length === 0 && isAuthenticated ? (
-              <button className="btn-gitdrop btn-gitdrop-primary" onClick={() => setPublishModalOpen(true)}>
-                <Github size={14} />
-                <span>Publish to GitHub</span>
-              </button>
-            ) : remotes.length > 0 ? (
+            {remotes.length > 0 ? (
               <button
                 className="btn-gitdrop btn-gitdrop-primary"
                 onClick={() => push()}
@@ -93,7 +79,27 @@ export const WorkspacePage: React.FC = () => {
                     : 'Push to Remote'}
                 </span>
               </button>
-            ) : null}
+            ) : (
+              <button
+                className="btn-gitdrop btn-gitdrop-primary"
+                onClick={() => setPublishModalOpen(true)}
+                title="Publish and push repository to GitHub"
+              >
+                <Github size={14} />
+                <span>Push to GitHub</span>
+              </button>
+            )}
+
+            {!projectInfo?.isGit && (
+              <button
+                className="btn-gitdrop"
+                onClick={() => setInitModalOpen(true)}
+                title="Initialize local Git repository without publishing"
+              >
+                <GitBranch size={14} />
+                <span>Initialize Git</span>
+              </button>
+            )}
 
             {projectInfo?.isGit && remotes.length > 0 && isAuthenticated && (
               <button
@@ -124,26 +130,63 @@ export const WorkspacePage: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <GitBranch size={24} color="var(--accent-text)" />
+              <Github size={24} color="var(--accent-text)" />
               <div>
                 <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
-                  Git repository is not initialized in this folder
+                  Folder is ready to be pushed to GitHub
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Initialize Git to track history, review file diffs, switch branches, and commit changes.
+                  Push this folder directly to GitHub to create a repository, stage your files, and create the initial commit automatically.
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setInitModalOpen(true)}>
+              <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setPublishModalOpen(true)}>
+                <Github size={13} />
+                <span>Push to GitHub</span>
+              </button>
+              <button className="btn-gitdrop btn-gitdrop-sm" onClick={() => setInitModalOpen(true)}>
                 <GitBranch size={13} />
-                <span>Initialize Git</span>
+                <span>Initialize Local Only</span>
               </button>
               <button className="btn-gitdrop btn-gitdrop-sm" onClick={() => setGitignoreModalOpen(true)}>
                 <FileCode size={13} />
                 <span>Add .gitignore</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Local Only Repository Banner (No Remote) */}
+        {projectInfo?.isGit && remotes.length === 0 && (
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Github size={24} color="var(--accent-text)" />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+                  Repository has no remote origin configured
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  This repository is local only. Push it to GitHub to create a remote repository and sync your commits.
+                </div>
+              </div>
+            </div>
+            <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setPublishModalOpen(true)}>
+              <Github size={13} />
+              <span>Push to GitHub</span>
+            </button>
           </div>
         )}
 

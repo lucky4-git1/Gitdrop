@@ -12,17 +12,35 @@ interface PublishModalProps {
 
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
   const { projectInfo, activeProject, gitService } = useRepository();
-  const { isAuthenticated, createRemoteRepo } = useAuth();
+  const { isAuthenticated, createRemoteRepo, connectGitHub, profile } = useAuth();
   const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
 
   const [name, setName] = useState(activeProject?.displayName || activeProject?.name || projectInfo?.name || 'my-project');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(true);
 
+  const [tokenInput, setTokenInput] = useState('');
+  const [isConnectingToken, setIsConnectingToken] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
   const [steps, setSteps] = useState<{ id: string; label: string; status: 'pending' | 'running' | 'done' | 'error' }[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleConnectToken = async () => {
+    if (!tokenInput.trim()) return;
+    setIsConnectingToken(true);
+    setConnectError(null);
+    try {
+      await connectGitHub(tokenInput.trim());
+      setTokenInput('');
+    } catch (err: any) {
+      setConnectError(err?.message || 'Failed to authenticate token with GitHub.');
+    } finally {
+      setIsConnectingToken(false);
+    }
+  };
 
   // Sync state with currently active project whenever modal opens or active project changes
   useEffect(() => {
@@ -33,6 +51,8 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
       setIsSuccess(false);
       setErrorMessage(null);
       setSteps([]);
+      setTokenInput('');
+      setConnectError(null);
     }
   }, [isOpen, activeProject?.name, activeProject?.displayName, projectInfo?.name]);
 
@@ -42,7 +62,10 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
   const handlePublish = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isAuthenticated) return;
+    if (!isAuthenticated && !tokenInput.trim()) {
+      setErrorMessage('Please enter your GitHub Personal Access Token to push this repository.');
+      return;
+    }
 
     setIsPublishing(true);
     setErrorMessage(null);
@@ -62,6 +85,12 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
     };
 
     try {
+      // 0. Auto-connect token if provided and not yet authenticated
+      if (!isAuthenticated && tokenInput.trim()) {
+        updateStep('create', 'running', 'Connecting to GitHub with token...');
+        await connectGitHub(tokenInput.trim());
+      }
+
       // 1. Create or resolve GitHub repository
       let remoteUrl = existingOrigin?.url;
       if (!remoteUrl) {
@@ -125,7 +154,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
         <div className="modal-gitdrop-header">
           <h3 className="modal-gitdrop-title">
             <Github size={16} />
-            Publish to GitHub
+            Push to GitHub
           </h3>
           <button className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm" onClick={onClose} aria-label="Close">
             <X size={16} />
@@ -185,6 +214,72 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
         ) : (
           <form onSubmit={handlePublish}>
             <div className="modal-gitdrop-body">
+              {isAuthenticated && profile && (
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)',
+                    fontSize: '12px',
+                    marginBottom: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <Github size={14} color="var(--accent-text)" />
+                  <span>
+                    Pushing to GitHub as <strong>@{profile.username}</strong>
+                  </span>
+                </div>
+              )}
+
+              {!isAuthenticated && (
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--accent)',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <Github size={16} color="var(--accent-text)" />
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
+                      Connect GitHub Account
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                    Enter your GitHub Personal Access Token to push and create this repository on GitHub.
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="password"
+                      className="form-control-gitdrop"
+                      placeholder="Paste token (ghp_... or github_pat_...)"
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      style={{ fontSize: '12px', flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+                      onClick={handleConnectToken}
+                      disabled={isConnectingToken || !tokenInput.trim()}
+                    >
+                      {isConnectingToken ? 'Connecting...' : 'Connect'}
+                    </button>
+                  </div>
+                  {connectError && (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--danger-text)' }}>
+                      {connectError}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {existingOrigin && (
                 <div
                   style={{
@@ -201,7 +296,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
                     {existingOrigin.url}
                   </div>
                   <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Publishing will push your current commits directly to this remote.
+                    Pushing will sync your current branch and commits directly to this remote.
                   </div>
                 </div>
               )}
@@ -235,7 +330,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
 
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>
-                  Branch to Publish
+                  Branch to Push
                 </label>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                   Active branch: <strong style={{ color: 'var(--accent-text)' }}>{currentBranch}</strong> (will be pushed to GitHub)
@@ -273,8 +368,16 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
               <button type="button" className="btn-gitdrop" onClick={onClose}>
                 Cancel
               </button>
-              <button type="submit" className="btn-gitdrop btn-gitdrop-primary">
-                {existingOrigin ? 'Push to GitHub' : 'Create & Publish'}
+              <button
+                type="submit"
+                className="btn-gitdrop btn-gitdrop-primary"
+                disabled={!isAuthenticated && !tokenInput.trim()}
+              >
+                {!isAuthenticated && !tokenInput.trim()
+                  ? 'Connect Token to Push'
+                  : existingOrigin
+                  ? 'Push to GitHub'
+                  : 'Create & Push to GitHub'}
               </button>
             </div>
           </form>

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { DiffFile, GitFileStatus } from '@/types/git';
 import { StashModal } from '@/components/Modals/BranchModals';
+import { PublishModal } from '@/components/Modals/PublishModal';
 
 export const ChangesPage: React.FC = () => {
   const {
@@ -29,6 +30,7 @@ export const ChangesPage: React.FC = () => {
     discardFiles,
     commit,
     push,
+    remotes,
   } = useGit();
 
   const {
@@ -43,6 +45,7 @@ export const ChangesPage: React.FC = () => {
   const [commitMessage, setCommitMessage] = useState('');
   const [isAmend, setIsAmend] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [isPublishModalOpen, setPublishModalOpen] = useState(false);
   const [diffData, setDiffData] = useState<DiffFile | null>(null);
   const [isStashModalOpen, setStashModalOpen] = useState(false);
 
@@ -139,7 +142,11 @@ export const ChangesPage: React.FC = () => {
       setIsAmend(false);
 
       if (shouldPush) {
-        await push();
+        if (remotes.length > 0) {
+          await push();
+        } else {
+          setPublishModalOpen(true);
+        }
       }
     } finally {
       setIsCommitting(false);
@@ -450,10 +457,10 @@ export const ChangesPage: React.FC = () => {
               style={{ flex: 1 }}
               onClick={() => handleCommit(true)}
               disabled={isCommitting || !commitMessage.trim() || (stagedFiles.length === 0 && !isAmend)}
-              title="Commit & Push to Remote"
+              title={remotes.length > 0 ? 'Commit & Push to Remote' : 'Commit & Push to GitHub'}
             >
               <ArrowUpRight size={14} />
-              <span>Commit & Push</span>
+              <span>{remotes.length > 0 ? 'Commit & Push' : 'Commit & Push to GitHub'}</span>
             </button>
           </div>
         </div>
@@ -570,6 +577,7 @@ export const ChangesPage: React.FC = () => {
       </div>
 
       <StashModal isOpen={isStashModalOpen} onClose={() => setStashModalOpen(false)} />
+      <PublishModal isOpen={isPublishModalOpen} onClose={() => setPublishModalOpen(false)} />
     </div>
   );
 };
