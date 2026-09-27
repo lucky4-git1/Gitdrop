@@ -80,15 +80,15 @@ export class ProjectManager implements IProjectManager {
     return entry;
   }
 
-  public async openProject(id: string): Promise<void> {
-    return this.setActiveProject(id);
+  public async openProject(id: string, directHandle?: FileSystemDirectoryHandle): Promise<void> {
+    return this.setActiveProject(id, directHandle);
   }
 
-  public async switchProject(id: string): Promise<void> {
-    return this.setActiveProject(id);
+  public async switchProject(id: string, directHandle?: FileSystemDirectoryHandle): Promise<void> {
+    return this.setActiveProject(id, directHandle);
   }
 
-  public async setActiveProject(id: string): Promise<void> {
+  public async setActiveProject(id: string, directHandle?: FileSystemDirectoryHandle): Promise<void> {
     const currentSeq = ++this.switchCounter;
     logger.info('app', `PROJECT_OPEN_START: Opening project ${id} (seq: ${currentSeq})`);
 
@@ -128,7 +128,13 @@ export class ProjectManager implements IProjectManager {
       }
 
       // 2. Physical Directory via FileSystemAccess API
-      const handle = await this.registry.getHandle(id);
+      let handle: FileSystemDirectoryHandle | null = directHandle || null;
+      if (!handle) {
+        handle = await this.registry.getHandle(id);
+      } else {
+        await this.registry.saveProject(entry, handle);
+      }
+
       if (!handle) {
         // Handle not in IndexedDB or unsupported
         logger.warn('app', `Handle for project ${entry.name} not found in store`);
@@ -143,17 +149,19 @@ export class ProjectManager implements IProjectManager {
         return;
       }
 
-      // 3. Check permission on directory handle
-      let hasPermission = false;
-      try {
-        if ('queryPermission' in handle) {
-          const status = await (handle as any).queryPermission({ mode: 'readwrite' });
-          hasPermission = status === 'granted';
-        } else {
-          hasPermission = true;
+      // 3. Check permission on directory handle (skip if directHandle was freshly chosen)
+      let hasPermission = !!directHandle;
+      if (!hasPermission) {
+        try {
+          if ('queryPermission' in handle) {
+            const status = await (handle as any).queryPermission({ mode: 'readwrite' });
+            hasPermission = status === 'granted';
+          } else {
+            hasPermission = true;
+          }
+        } catch {
+          hasPermission = false;
         }
-      } catch {
-        hasPermission = false;
       }
 
       if (!hasPermission) {

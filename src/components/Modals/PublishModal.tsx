@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRepository } from '@/state/RepositoryContext';
 import { useAuth } from '@/state/AuthContext';
 import { useGit } from '@/state/GitContext';
@@ -11,11 +11,11 @@ interface PublishModalProps {
 }
 
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
-  const { projectInfo, gitService } = useRepository();
+  const { projectInfo, activeProject, gitService } = useRepository();
   const { isAuthenticated, createRemoteRepo } = useAuth();
   const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
 
-  const [name, setName] = useState(projectInfo?.name || 'my-project');
+  const [name, setName] = useState(activeProject?.displayName || activeProject?.name || projectInfo?.name || 'my-project');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(true);
 
@@ -23,6 +23,18 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Sync state with currently active project whenever modal opens or active project changes
+  useEffect(() => {
+    if (isOpen) {
+      setName(activeProject?.displayName || activeProject?.name || projectInfo?.name || 'my-project');
+      setDescription('');
+      setIsPublishing(false);
+      setIsSuccess(false);
+      setErrorMessage(null);
+      setSteps([]);
+    }
+  }, [isOpen, activeProject?.name, activeProject?.displayName, projectInfo?.name]);
 
   if (!isOpen) return null;
 

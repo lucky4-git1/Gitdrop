@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRepository } from '@/state/RepositoryContext';
 import { useGit } from '@/state/GitContext';
 import { useUI } from '@/state/UIContext';
 import { DiffEditor } from '@monaco-editor/react';
@@ -63,7 +64,7 @@ export const ChangesPage: React.FC = () => {
   }, [selectedDiffFile, allChangedFiles, setSelectedDiffFile]);
 
   // Fetch diff content when selected file changes
-  const { gitService } = useGit() as any; // or access through context
+  const { gitService } = useRepository();
   useEffect(() => {
     let isCancelled = false;
     async function loadDiff() {

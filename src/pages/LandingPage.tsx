@@ -269,7 +269,10 @@ export const LandingPage: React.FC = () => {
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
                   }}
-                  onClick={() => switchProject(p.id)}
+                  onClick={async () => {
+                    await switchProject(p.id);
+                    setActiveView('workspace');
+                  }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <HardDrive size={14} color="var(--accent-text)" />
@@ -307,7 +310,14 @@ export const LandingPage: React.FC = () => {
             transition: 'all 0.15s ease',
             cursor: 'pointer',
           }}
-          onClick={openDirectoryPicker}
+          onClick={async () => {
+            try {
+              await openDirectoryPicker();
+              setActiveView('workspace');
+            } catch {
+              // ignore
+            }
+          }}
         >
           <FolderDown
             size={40}
@@ -327,7 +337,14 @@ export const LandingPage: React.FC = () => {
           <button
             className="btn-gitdrop btn-gitdrop-primary"
             style={{ padding: '8px 24px', fontSize: '13px', width: '240px' }}
-            onClick={openDirectoryPicker}
+            onClick={async () => {
+              try {
+                await openDirectoryPicker();
+                setActiveView('workspace');
+              } catch {
+                // ignore
+              }
+            }}
           >
             <FolderOpen size={16} />
             Open Local Folder

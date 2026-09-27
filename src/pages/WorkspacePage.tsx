@@ -12,6 +12,7 @@ import {
   FolderTree,
   Send,
   ArrowUpRight,
+  FileCode,
 } from 'lucide-react';
 import { Github } from '@/components/Icons/GithubIcon';
 import { PublishModal } from '@/components/Modals/PublishModal';
@@ -62,14 +63,21 @@ export const WorkspacePage: React.FC = () => {
               <span>Refresh</span>
             </button>
 
-            {remotes.length === 0 && isAuthenticated && (
+            {!projectInfo?.isGit ? (
+              <button
+                className="btn-gitdrop btn-gitdrop-primary"
+                onClick={() => setInitModalOpen(true)}
+                title="Initialize local Git repository"
+              >
+                <GitBranch size={14} />
+                <span>Initialize Git</span>
+              </button>
+            ) : remotes.length === 0 && isAuthenticated ? (
               <button className="btn-gitdrop btn-gitdrop-primary" onClick={() => setPublishModalOpen(true)}>
                 <Github size={14} />
                 <span>Publish to GitHub</span>
               </button>
-            )}
-
-            {remotes.length > 0 && (
+            ) : remotes.length > 0 ? (
               <button
                 className="btn-gitdrop btn-gitdrop-primary"
                 onClick={() => push()}
@@ -85,9 +93,9 @@ export const WorkspacePage: React.FC = () => {
                     : 'Push to Remote'}
                 </span>
               </button>
-            )}
+            ) : null}
 
-            {remotes.length > 0 && isAuthenticated && (
+            {projectInfo?.isGit && remotes.length > 0 && isAuthenticated && (
               <button
                 className="btn-gitdrop"
                 onClick={() => setPublishModalOpen(true)}
@@ -99,6 +107,45 @@ export const WorkspacePage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Uninitialized Git Repository Banner */}
+        {!projectInfo?.isGit && (
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius-lg)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <GitBranch size={24} color="var(--accent-text)" />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+                  Git repository is not initialized in this folder
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Initialize Git to track history, review file diffs, switch branches, and commit changes.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setInitModalOpen(true)}>
+                <GitBranch size={13} />
+                <span>Initialize Git</span>
+              </button>
+              <button className="btn-gitdrop btn-gitdrop-sm" onClick={() => setGitignoreModalOpen(true)}>
+                <FileCode size={13} />
+                <span>Add .gitignore</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Repository Health Section */}
         <div
@@ -188,7 +235,7 @@ export const WorkspacePage: React.FC = () => {
         </div>
 
         {/* Remote Origin Banner */}
-        {remotes.length > 0 && (
+        {projectInfo?.isGit && remotes.length > 0 && (
           <div
             style={{
               padding: '12px 16px',

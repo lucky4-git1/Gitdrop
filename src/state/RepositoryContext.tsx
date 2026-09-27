@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { IFileSystem } from '@/types/filesystem';
 import { ProjectInfo, ProjectEntry } from '@/types/project';
 import { GitService } from '@/services/git/IGitService';
@@ -62,16 +62,24 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return unsubscribe;
   }, [refreshProjectsList]);
 
-  // Startup restoration: load projects and open initial project according to settings
+  const hasRestoredRef = useRef(false);
+
+  // Startup restoration: load projects and open initial project according to settings (only once)
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
+        if (hasRestoredRef.current) return;
+        hasRestoredRef.current = true;
+
         const list = await projectManager.getProjects();
         if (!mounted) return;
         setProjects(list);
 
         if (list.length === 0) return;
+
+        // If a project is already active or in process of opening, do not overwrite it
+        if (projectManager.getActiveProject()) return;
 
         // Startup behavior setting
         const startup = (config as any).startupBehavior || 'lastProject';
@@ -94,7 +102,7 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => {
       mounted = false;
     };
-  }, [config]);
+  }, []);
 
   const refreshProjectInfo = useCallback(async () => {
     if (!fileSystem || !activeProject) return;
@@ -137,18 +145,26 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (handle: FileSystemDirectoryHandle, autoOpen: boolean = true): Promise<ProjectEntry> => {
       logger.info('app', `Registering directory handle: ${handle.name}`);
 
-      // Check if project is already registered
-      const duplicate = await projectRegistry.findDuplicate(handle.name);
+      // Check if project is already registered by native handle identity
+      const duplicate = await projectRegistry.findDuplicateHandle(handle);
       let entry: ProjectEntry;
 
       if (duplicate) {
         entry = duplicate;
         await projectRegistry.saveProject(entry, handle);
       } else {
+        const all = await projectRegistry.listProjects();
+        let displayName = handle.name;
+        let counter = 1;
+        while (all.some((p) => (p.displayName || p.name).toLowerCase() === displayName.toLowerCase())) {
+          counter++;
+          displayName = `${handle.name} (${counter})`;
+        }
+
         entry = await projectManager.addProject(
           {
             name: handle.name,
-            displayName: handle.name,
+            displayName,
             path: handle.name,
             provider: 'unknown',
           },
@@ -159,7 +175,7 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await refreshProjectsList();
 
       if (autoOpen) {
-        await projectManager.openProject(entry.id);
+        await projectManager.openProject(entry.id, handle);
       }
       return entry;
     },

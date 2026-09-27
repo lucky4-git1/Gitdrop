@@ -112,9 +112,18 @@ export class BrowserGitAdapter implements GitService {
 
   public async status(): Promise<GitStatusSummary> {
     try {
-      if (await this.fs.exists('.git')) {
-        await this.ensureGitInitialized();
+      if (!(await this.fs.exists('.git'))) {
+        return {
+          branch: 'main',
+          clean: true,
+          staged: [],
+          unstaged: [],
+          conflicted: [],
+          ahead: 0,
+          behind: 0,
+        };
       }
+      await this.ensureGitInitialized();
       const branchName = await this.currentBranch();
       const matrix = await git.statusMatrix({
         fs: this.gitFs,
@@ -256,6 +265,9 @@ export class BrowserGitAdapter implements GitService {
 
   public async log(options?: { depth?: number; ref?: string }): Promise<Commit[]> {
     try {
+      if (!(await this.fs.exists('.git'))) {
+        return [];
+      }
       const rawCommits = await git.log({
         fs: this.gitFs,
         dir: this.dir,
@@ -307,6 +319,9 @@ export class BrowserGitAdapter implements GitService {
   }
 
   public async branch(): Promise<Branch[]> {
+    if (!(await this.fs.exists('.git'))) {
+      return [{ name: 'main', current: true }];
+    }
     const current = await this.currentBranch();
     const localBranches = await git.listBranches({ fs: this.gitFs, dir: this.dir });
     const remoteBranches = await git.listBranches({ fs: this.gitFs, dir: this.dir, remote: 'origin' }).catch(() => []);
@@ -345,6 +360,10 @@ export class BrowserGitAdapter implements GitService {
 
   public async currentBranch(): Promise<string> {
     try {
+      if (!(await this.fs.exists('.git'))) {
+        return 'main';
+      }
+
       const b = await git.currentBranch({
         fs: this.gitFs,
         dir: this.dir,
@@ -613,6 +632,9 @@ export class BrowserGitAdapter implements GitService {
   }
 
   public async remotes(): Promise<Remote[]> {
+    if (!(await this.fs.exists('.git'))) {
+      return [];
+    }
     const list = await git.listRemotes({ fs: this.gitFs, dir: this.dir });
     return list.map((r) => ({
       name: r.remote,
@@ -771,6 +793,9 @@ export class BrowserGitAdapter implements GitService {
   }
 
   public async tags(): Promise<Tag[]> {
+    if (!(await this.fs.exists('.git'))) {
+      return [];
+    }
     const tagNames = await git.listTags({ fs: this.gitFs, dir: this.dir });
     const list: Tag[] = [];
 

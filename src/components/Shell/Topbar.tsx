@@ -155,9 +155,10 @@ export const Topbar: React.FC = () => {
                             backgroundColor: isCur ? 'var(--accent-subtle)' : 'transparent',
                             color: isCur ? 'var(--accent-text)' : 'var(--text-primary)',
                           }}
-                          onClick={() => {
+                          onClick={async () => {
                             setRepoDropdownOpen(false);
-                            switchProject(p.id);
+                            await switchProject(p.id);
+                            setActiveView('workspace');
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
@@ -185,9 +186,14 @@ export const Topbar: React.FC = () => {
                 <button
                   className="btn-gitdrop btn-gitdrop-subtle btn-gitdrop-sm"
                   style={{ width: '100%', justifyContent: 'flex-start' }}
-                  onClick={() => {
+                  onClick={async () => {
                     setRepoDropdownOpen(false);
-                    openDirectoryPicker();
+                    try {
+                      await openDirectoryPicker();
+                      setActiveView('workspace');
+                    } catch {
+                      // ignore
+                    }
                   }}
                 >
                   <FolderOpen size={14} />

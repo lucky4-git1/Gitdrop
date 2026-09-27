@@ -212,6 +212,23 @@ export class ProjectRegistry {
     );
   }
 
+  public async findDuplicateHandle(handle: FileSystemDirectoryHandle): Promise<ProjectEntry | null> {
+    const all = await this.listProjects();
+    for (const p of all) {
+      const existingHandle = await this.getHandle(p.id);
+      if (existingHandle && 'isSameEntry' in (handle as any)) {
+        try {
+          if (await (handle as any).isSameEntry(existingHandle)) {
+            return p;
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return null;
+  }
+
   public async clearAll(): Promise<void> {
     this.memEntries.clear();
     this.memHandles.clear();

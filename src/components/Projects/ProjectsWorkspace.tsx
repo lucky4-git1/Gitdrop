@@ -96,6 +96,15 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
     }
   };
 
+  const handleOpenFolder = async () => {
+    try {
+      await openDirectoryPicker();
+      setActiveView('workspace');
+    } catch {
+      // handled
+    }
+  };
+
   const handleRename = (project: ProjectEntry) => {
     const currentName = project.displayName || project.name;
     const newName = prompt('Enter new project display name:', currentName);
@@ -169,7 +178,7 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={openDirectoryPicker}>
+          <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={handleOpenFolder}>
             <FolderOpen size={14} />
             <span>Open Folder</span>
           </button>
@@ -277,7 +286,7 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
                 : 'Open a local folder, clone a repository, or drop any project here to begin.'}
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button className="btn-gitdrop btn-gitdrop-primary" onClick={openDirectoryPicker}>
+              <button className="btn-gitdrop btn-gitdrop-primary" onClick={handleOpenFolder}>
                 <FolderOpen size={14} /> Open Local Folder
               </button>
               <button className="btn-gitdrop" onClick={() => openVirtualProject('react-vite-demo')}>

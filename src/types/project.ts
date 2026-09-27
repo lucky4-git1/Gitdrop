@@ -57,10 +57,10 @@ export interface IProjectManager {
     project: Omit<ProjectEntry, 'id' | 'addedAt' | 'lastOpenedAt'>,
     handle?: FileSystemDirectoryHandle
   ): Promise<ProjectEntry>;
-  openProject(id: string): Promise<void>;
+  openProject(id: string, directHandle?: FileSystemDirectoryHandle): Promise<void>;
   closeProject(id: string): Promise<void>;
   removeProject(id: string): Promise<void>;
-  setActiveProject(id: string): Promise<void>;
+  setActiveProject(id: string, directHandle?: FileSystemDirectoryHandle): Promise<void>;
   getActiveProject(): ProjectEntry | null;
   refreshProject(id: string): Promise<void>;
   setDefaultProject(id: string): Promise<void>;
