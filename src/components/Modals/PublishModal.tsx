@@ -11,9 +11,9 @@ interface PublishModalProps {
 }
 
 export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) => {
-  const { projectInfo, activeProject, gitService } = useRepository();
+  const { projectInfo, activeProject, gitService, refreshProjectInfo } = useRepository();
   const { isAuthenticated, createRemoteRepo, connectGitHub, profile } = useAuth();
-  const { stageAll, commit, addRemote, push, remotes, currentBranch } = useGit();
+  const { stageAll, commit, addRemote, push, remotes, currentBranch, refresh } = useGit();
 
   const [name, setName] = useState(activeProject?.displayName || activeProject?.name || projectInfo?.name || 'my-project');
   const [description, setDescription] = useState('');
@@ -108,6 +108,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
       // 2. Add or update remote
       updateStep('remote', 'running');
       await gitService?.ensureGitInitialized();
+      await refreshProjectInfo();
       await addRemote('origin', remoteUrl);
       updateStep('remote', 'done');
 
@@ -139,6 +140,10 @@ export const PublishModal: React.FC<PublishModalProps> = ({ isOpen, onClose }) =
       updateStep('push', 'running', `Pushing branch "${activeBranch}" to GitHub...`);
       await push({ remote: 'origin', branch: activeBranch });
       updateStep('push', 'done', `Pushed "${activeBranch}" to GitHub successfully!`);
+
+      // 6. Ensure project info and git context are fully refreshed
+      await refreshProjectInfo();
+      await refresh();
 
       setIsSuccess(true);
       setTimeout(() => {

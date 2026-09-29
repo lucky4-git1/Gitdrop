@@ -57,7 +57,7 @@ interface GitContextType {
 const GitContext = createContext<GitContextType | null>(null);
 
 export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { gitService, projectInfo } = useRepository();
+  const { gitService, fileSystem, projectInfo, refreshProjectInfo } = useRepository();
   const { config } = useConfig();
   const { getCredentialForGit } = useAuth();
   const { showError } = useUI();
@@ -77,7 +77,7 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const refresh = useCallback(async () => {
-    if (!gitService || !projectInfo?.isGit) {
+    if (!gitService) {
       setStatus(null);
       setBranches([]);
       setCommits([]);
@@ -85,6 +85,21 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTags([]);
       setStashes([]);
       return;
+    }
+
+    const isGit = projectInfo?.isGit || (await fileSystem?.exists('.git').catch(() => false));
+    if (!isGit) {
+      setStatus(null);
+      setBranches([]);
+      setCommits([]);
+      setRemotes([]);
+      setTags([]);
+      setStashes([]);
+      return;
+    }
+
+    if (!projectInfo?.isGit && refreshProjectInfo) {
+      refreshProjectInfo().catch(() => {});
     }
 
     try {
@@ -111,7 +126,7 @@ export const GitProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setIsLoading(false);
     }
-  }, [gitService, projectInfo?.isGit, config.defaultBranch]);
+  }, [gitService, fileSystem, projectInfo?.isGit, refreshProjectInfo, config.defaultBranch]);
 
   useEffect(() => {
     refresh();
