@@ -13,7 +13,7 @@ import { Github } from '@/components/Icons/GithubIcon';
 
 export const DownloadPage: React.FC = () => {
   const { navigate } = useRouter();
-  const releasesUrl = 'https://github.com/lucky4-git1/Gitdrop/releases';
+  const releasesUrl = 'https://github.com/lucky4-git1/gitdrop-app/releases';
 
   return (
     <div style={{ backgroundColor: '#090d13', color: '#e6edf3', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
@@ -62,7 +62,7 @@ export const DownloadPage: React.FC = () => {
           </Link>
 
           <a
-            href="https://github.com/lucky4-git1/Gitdrop"
+            href="https://github.com/lucky4-git1/gitdrop-app"
             target="_blank"
             rel="noopener noreferrer"
             style={{
