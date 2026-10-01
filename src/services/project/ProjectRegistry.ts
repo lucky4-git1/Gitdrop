@@ -204,10 +204,13 @@ export class ProjectRegistry {
     const all = await this.listProjects();
     return (
       all.find((p) => {
-        if (path && p.path && p.path.toLowerCase() === path.toLowerCase()) {
-          return true;
+        if (path && p.path) {
+          return p.path.toLowerCase() === path.toLowerCase();
         }
-        return p.name.toLowerCase() === name.toLowerCase();
+        if (!path) {
+          return p.name.toLowerCase() === name.toLowerCase();
+        }
+        return false;
       }) || null
     );
   }

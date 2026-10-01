@@ -18,6 +18,26 @@ import { mapStatusMatrix } from './statusMapper';
 import { DiffService } from './diffService';
 import { logger } from '../logger/logger';
 
+export function parseGitConfigRemotes(configContent: string): Remote[] {
+  const remotes: Remote[] = [];
+  const remoteSectionRegex = /\[remote\s+["'](.+?)["']\]([\s\S]*?)(?=\n\[|$)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = remoteSectionRegex.exec(configContent)) !== null) {
+    const name = match[1];
+    const sectionBody = match[2];
+    const urlMatch = sectionBody.match(/^\s*url\s*=\s*(.+)$/m);
+    if (urlMatch) {
+      remotes.push({
+        name,
+        url: urlMatch[1].trim(),
+      });
+    }
+  }
+
+  return remotes;
+}
+
 export class BrowserGitAdapter implements GitService {
   private fs: IFileSystem;
   private dir: string;
@@ -635,11 +655,31 @@ export class BrowserGitAdapter implements GitService {
     if (!(await this.fs.exists('.git'))) {
       return [];
     }
-    const list = await git.listRemotes({ fs: this.gitFs, dir: this.dir });
-    return list.map((r) => ({
-      name: r.remote,
-      url: r.url,
-    }));
+
+    try {
+      const list = await git.listRemotes({ fs: this.gitFs, dir: this.dir });
+      if (list && list.length > 0) {
+        return list.map((r) => ({
+          name: r.remote,
+          url: r.url,
+        }));
+      }
+    } catch (err: any) {
+      logger.warn('git', 'isomorphic-git listRemotes failed, falling back to direct .git/config parse', err?.message);
+    }
+
+    // Direct fallback parse of .git/config
+    try {
+      if (await this.fs.exists('.git/config')) {
+        const configContent = await this.fs.readFile('.git/config', { encoding: 'utf8' });
+        const text = typeof configContent === 'string' ? configContent : new TextDecoder().decode(configContent);
+        return parseGitConfigRemotes(text);
+      }
+    } catch (err: any) {
+      logger.error('git', 'Failed reading .git/config directly', err?.message);
+    }
+
+    return [];
   }
 
   private getAuthCredentials(token?: string) {
@@ -661,16 +701,35 @@ export class BrowserGitAdapter implements GitService {
   public async addRemote(name: string, url: string): Promise<void> {
     logger.info('git', `git remote add ${name} ${url}`);
     await this.ensureGitInitialized();
-    const existing = await this.remotes().catch(() => []);
-    if (existing.some((r) => r.name === name)) {
-      await this.removeRemote(name).catch(() => {});
+    try {
+      await git.addRemote({
+        fs: this.gitFs,
+        dir: this.dir,
+        remote: name,
+        url,
+        force: true,
+      });
+    } catch (err: any) {
+      logger.warn('git', `git.addRemote failed (${err?.message}), attempting manual config update`);
+      // Fallback: manually update .git/config
+      try {
+        let content = '';
+        if (await this.fs.exists('.git/config')) {
+          const raw = await this.fs.readFile('.git/config', { encoding: 'utf8' });
+          content = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
+        }
+        const sectionRegex = new RegExp(`\\[remote\\s+["']${name}["']\\][\\s\\S]*?(?=\\n\\[|$)`, 'g');
+        const newSection = `[remote "${name}"]\n\turl = ${url}\n\tfetch = +refs/heads/*:refs/remotes/${name}/*\n`;
+        if (sectionRegex.test(content)) {
+          content = content.replace(sectionRegex, newSection.trim());
+        } else {
+          content = `${content.trim()}\n\n${newSection}`;
+        }
+        await this.fs.writeFile('.git/config', content);
+      } catch (writeErr: any) {
+        throw new Error(`Failed to configure remote "${name}": ${err?.message || writeErr?.message}`);
+      }
     }
-    await git.addRemote({
-      fs: this.gitFs,
-      dir: this.dir,
-      remote: name,
-      url,
-    });
   }
 
   public async removeRemote(name: string): Promise<void> {

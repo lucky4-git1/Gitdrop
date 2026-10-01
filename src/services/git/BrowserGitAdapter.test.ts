@@ -117,6 +117,44 @@ describe('BrowserGitAdapter', () => {
     // Check that .git/HEAD was created
     expect(await fs.exists('.git/HEAD')).toBe(true);
   });
+
+  it('detects remotes from pre-existing .git/config correctly', async () => {
+    const fs = new MemoryFS();
+    const adapter = new BrowserGitAdapter(fs, '/');
+
+    await fs.mkdir('.git');
+    await fs.writeFile(
+      '.git/config',
+      '[core]\n\trepositoryformatversion = 0\n[remote "origin"]\n\turl = https://github.com/my-org/my-project.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[remote "upstream"]\n\turl = git@github.com:upstream-org/upstream-project.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n'
+    );
+
+    const remotes = await adapter.remotes();
+    expect(remotes.length).toBe(2);
+    expect(remotes[0].name).toBe('origin');
+    expect(remotes[0].url).toBe('https://github.com/my-org/my-project.git');
+    expect(remotes[1].name).toBe('upstream');
+    expect(remotes[1].url).toBe('git@github.com:upstream-org/upstream-project.git');
+  });
+
+  it('allows adding and updating remotes without throwing AlreadyExistsError', async () => {
+    const fs = new MemoryFS();
+    const adapter = new BrowserGitAdapter(fs, '/');
+
+    await adapter.init({
+      defaultBranch: 'main',
+      user: { name: 'Alice Developer', email: 'alice@example.com' },
+    });
+
+    // Add initial remote
+    await adapter.addRemote('origin', 'https://github.com/test/repo.git');
+    let remotes = await adapter.remotes();
+    expect(remotes.find((r) => r.name === 'origin')?.url).toBe('https://github.com/test/repo.git');
+
+    // Update same remote without error
+    await adapter.addRemote('origin', 'https://github.com/test/updated-repo.git');
+    remotes = await adapter.remotes();
+    expect(remotes.find((r) => r.name === 'origin')?.url).toBe('https://github.com/test/updated-repo.git');
+  });
 });
 
 

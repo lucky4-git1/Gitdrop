@@ -45,6 +45,7 @@ export function createIsomorphicGitFs(fs: IFileSystem) {
   };
 
   return {
+    ...promises,
     promises,
   };
 }

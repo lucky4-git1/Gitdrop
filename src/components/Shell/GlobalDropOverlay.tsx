@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useRepository } from '@/state/RepositoryContext';
 import { useUI } from '@/state/UIContext';
 import { FolderDown, HardDrive, Check, X } from 'lucide-react';
-import { ProjectEntry } from '@/types/project';
 
 export const GlobalDropOverlay: React.FC = () => {
-  const { openDirectoryHandle, switchProject } = useRepository();
+  const { openDirectoryHandle } = useRepository();
   const { setActiveView } = useUI();
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -81,8 +80,7 @@ export const GlobalDropOverlay: React.FC = () => {
   const handleOpenProject = async () => {
     if (!detectedHandle) return;
     try {
-      const entry: ProjectEntry = await openDirectoryHandle(detectedHandle, true);
-      await switchProject(entry.id);
+      await openDirectoryHandle(detectedHandle, true);
       setActiveView('workspace');
     } finally {
       setIsPromptOpen(false);

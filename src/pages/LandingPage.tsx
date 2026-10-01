@@ -67,7 +67,8 @@ export const LandingPage: React.FC = () => {
         try {
           const handle = await (item as any).getAsFileSystemHandle();
           if (handle && handle.kind === 'directory') {
-            await openDirectoryHandle(handle as FileSystemDirectoryHandle);
+            await openDirectoryHandle(handle as FileSystemDirectoryHandle, true);
+            setActiveView('workspace');
             return;
           }
         } catch {
@@ -75,9 +76,6 @@ export const LandingPage: React.FC = () => {
         }
       }
     }
-
-    // Fallback info if dropped without directory handle permissions
-    alert('Please use the "Open Folder" button if your browser restricts directory drag-and-drop.');
   };
 
   const formatSize = (bytes: number): string => {

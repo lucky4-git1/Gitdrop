@@ -398,9 +398,10 @@ export const CreateTagModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
 
 /* ---------------- ADD REMOTE MODAL ---------------- */
 export const AddRemoteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { addRemote } = useGit();
+  const { addRemote, refresh } = useGit();
   const [name, setName] = useState('origin');
   const [url, setUrl] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
   if (!isOpen) return null;
@@ -408,10 +409,14 @@ export const AddRemoteModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !url.trim()) return;
+    setError(null);
     setIsAdding(true);
     try {
       await addRemote(name.trim(), url.trim());
+      await refresh();
       onClose();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to add remote repository');
     } finally {
       setIsAdding(false);
     }
@@ -432,6 +437,22 @@ export const AddRemoteModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
 
         <form onSubmit={handleSubmit}>
           <div className="modal-gitdrop-body">
+            {error && (
+              <div
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--danger-subtle)',
+                  border: '1px solid var(--danger-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--danger-text)',
+                  fontSize: '12px',
+                  marginBottom: '14px',
+                }}
+              >
+                {error}
+              </div>
+            )}
+
             <div style={{ marginBottom: '14px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '6px' }}>
                 Remote Name
@@ -451,11 +472,11 @@ export const AddRemoteModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                 Remote URL
               </label>
               <input
-                type="url"
+                type="text"
                 className="form-control-gitdrop"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://github.com/user/repo.git"
+                placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git"
                 required
               />
             </div>

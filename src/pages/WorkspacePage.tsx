@@ -13,11 +13,13 @@ import {
   Send,
   ArrowUpRight,
   FileCode,
+  Globe,
 } from 'lucide-react';
 import { Github } from '@/components/Icons/GithubIcon';
 import { PublishModal } from '@/components/Modals/PublishModal';
 import { GitignoreModal } from '@/components/Modals/GitignoreModal';
 import { InitRepoModal } from '@/components/Modals/InitRepoModal';
+import { AddRemoteModal } from '@/components/Modals/BranchModals';
 
 export const WorkspacePage: React.FC = () => {
   const { projectInfo } = useRepository();
@@ -28,13 +30,15 @@ export const WorkspacePage: React.FC = () => {
   const [isPublishModalOpen, setPublishModalOpen] = useState(false);
   const [isGitignoreModalOpen, setGitignoreModalOpen] = useState(false);
   const [isInitModalOpen, setInitModalOpen] = useState(false);
+  const [isAddRemoteModalOpen, setAddRemoteModalOpen] = useState(false);
 
   const lastCommit = commits[0];
   const totalChanges = (status?.staged.length || 0) + (status?.unstaged.length || 0);
 
   const formatTimeAgo = (timestamp: number): string => {
-    const seconds = Math.floor((Date.now() - timestamp * 1000) / 1000);
-    if (seconds < 60) return `${Math.max(1, seconds)} seconds ago`;
+    const timeMs = timestamp > 1e11 ? timestamp : timestamp * 1000;
+    const seconds = Math.max(1, Math.floor((Date.now() - timeMs) / 1000));
+    if (seconds < 60) return `${seconds} seconds ago`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
     const hours = Math.floor(minutes / 60);
@@ -183,10 +187,16 @@ export const WorkspacePage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setPublishModalOpen(true)}>
-              <Github size={13} />
-              <span>Push to GitHub</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm" onClick={() => setPublishModalOpen(true)}>
+                <Github size={13} />
+                <span>Push to GitHub</span>
+              </button>
+              <button className="btn-gitdrop btn-gitdrop-sm" onClick={() => setAddRemoteModalOpen(true)}>
+                <Globe size={13} />
+                <span>Add Remote Manually</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -255,7 +265,16 @@ export const WorkspacePage: React.FC = () => {
               <div>
                 <div style={{ fontSize: '12px', fontWeight: 600 }}>Remote Repository</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  {remotes.length > 0 ? `Configured (${remotes[0].name})` : 'No remote configured'}
+                  {remotes.length > 0 ? (
+                    `Configured (${remotes[0].name})`
+                  ) : (
+                    <span
+                      style={{ color: 'var(--accent-text)', cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => setAddRemoteModalOpen(true)}
+                    >
+                      No remote configured (Click to add)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -441,6 +460,7 @@ export const WorkspacePage: React.FC = () => {
       <PublishModal isOpen={isPublishModalOpen} onClose={() => setPublishModalOpen(false)} />
       <GitignoreModal isOpen={isGitignoreModalOpen} onClose={() => setGitignoreModalOpen(false)} />
       <InitRepoModal isOpen={isInitModalOpen} onClose={() => setInitModalOpen(false)} />
+      <AddRemoteModal isOpen={isAddRemoteModalOpen} onClose={() => setAddRemoteModalOpen(false)} />
     </div>
   );
 };
