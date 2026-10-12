@@ -43,7 +43,7 @@ export const ErrorModal: React.FC = () => {
           </div>
 
           {/* Recommended Action */}
-          <div style={{ padding: '10px 12px', backgroundColor: 'var(--accent-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(56, 139, 253, 0.3)' }}>
+          <div style={{ padding: '10px 12px', backgroundColor: 'var(--accent-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}>
             <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--accent-text)', fontWeight: 600, marginBottom: '4px' }}>
               Recommended Action
             </div>

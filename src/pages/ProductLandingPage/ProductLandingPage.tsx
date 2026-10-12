@@ -49,15 +49,15 @@ export const ProductLandingPage: React.FC = () => {
           </Link>
 
           <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <a href="#features" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
+            <Link to="/#features" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
               Features
-            </a>
-            <a href="#workflow" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
+            </Link>
+            <Link to="/#workflow" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
               Workflow
-            </a>
-            <a href="#comparison" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
+            </Link>
+            <Link to="/#comparison" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
               Browser vs Desktop
-            </a>
+            </Link>
             <Link to="/download" style={{ color: '#8b949e', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.15s' }}>
               Download
             </Link>
@@ -93,7 +93,7 @@ export const ProductLandingPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: '#238636',
+              backgroundColor: '#f05032',
               color: '#ffffff',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               padding: '7px 16px',
@@ -137,27 +137,27 @@ export const ProductLandingPage: React.FC = () => {
             gap: '16px',
           }}
         >
-          <a
-            href="#features"
+          <Link
+            to="/#features"
             onClick={() => setMobileMenuOpen(false)}
             style={{ color: '#c9d1d9', textDecoration: 'none', fontSize: '15px' }}
           >
             Features
-          </a>
-          <a
-            href="#workflow"
+          </Link>
+          <Link
+            to="/#workflow"
             onClick={() => setMobileMenuOpen(false)}
             style={{ color: '#c9d1d9', textDecoration: 'none', fontSize: '15px' }}
           >
             Workflow
-          </a>
-          <a
-            href="#comparison"
+          </Link>
+          <Link
+            to="/#comparison"
             onClick={() => setMobileMenuOpen(false)}
             style={{ color: '#c9d1d9', textDecoration: 'none', fontSize: '15px' }}
           >
             Browser vs Desktop
-          </a>
+          </Link>
           <Link
             to="/download"
             onClick={() => setMobileMenuOpen(false)}
@@ -169,7 +169,7 @@ export const ProductLandingPage: React.FC = () => {
             to="/app"
             onClick={() => setMobileMenuOpen(false)}
             style={{
-              backgroundColor: '#238636',
+              backgroundColor: '#f05032',
               color: '#fff',
               textAlign: 'center',
               padding: '10px',
@@ -204,12 +204,12 @@ export const ProductLandingPage: React.FC = () => {
             border: '1px solid #30363d',
             backgroundColor: '#161b22',
             fontSize: '12px',
-            color: '#58a6ff',
+            color: '#f05032',
             fontWeight: 600,
             marginBottom: '24px',
           }}
         >
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#238636' }} />
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f05032' }} />
           Local-first Visual Git Client
         </div>
 
@@ -256,7 +256,7 @@ export const ProductLandingPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              backgroundColor: '#238636',
+              backgroundColor: '#f05032',
               color: '#ffffff',
               padding: '12px 26px',
               borderRadius: '8px',
@@ -264,7 +264,7 @@ export const ProductLandingPage: React.FC = () => {
               fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(35, 134, 54, 0.4)',
+              boxShadow: '0 4px 14px rgba(240, 80, 50, 0.4)',
               transition: 'transform 0.15s, background-color 0.15s',
             }}
           >
@@ -327,7 +327,7 @@ export const ProductLandingPage: React.FC = () => {
               <span style={{ marginLeft: '12px', color: '#c9d1d9', fontWeight: 600 }}>GitDrop — Visual Git Workspace</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#58a6ff' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f05032' }}>
                 <GitBranch size={12} /> main
               </span>
               <span style={{ color: '#3fb950' }}>Clean</span>
@@ -343,7 +343,7 @@ export const ProductLandingPage: React.FC = () => {
                   Repository
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', backgroundColor: '#1f242c', borderRadius: '6px', fontSize: '13px', fontWeight: 600, color: '#f0f6fc' }}>
-                  <FolderGit2 size={15} color="#58a6ff" />
+                  <FolderGit2 size={15} color="#f05032" />
                   <span>gitdrop-source</span>
                 </div>
               </div>
@@ -353,7 +353,7 @@ export const ProductLandingPage: React.FC = () => {
                   Branches
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', backgroundColor: '#238636', borderRadius: '4px', fontSize: '12px', color: '#fff', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', backgroundColor: '#f05032', borderRadius: '4px', fontSize: '12px', color: '#fff', fontWeight: 600 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <GitBranch size={13} /> main
                     </span>
@@ -391,7 +391,7 @@ export const ProductLandingPage: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#f0f6fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <GitCommit size={15} color="#58a6ff" /> Commit History Graph
+                    <GitCommit size={15} color="#f05032" /> Commit History Graph
                   </span>
                   <span style={{ fontSize: '11px', color: '#8b949e' }}>3 commits ahead of origin</span>
                 </div>
@@ -399,7 +399,7 @@ export const ProductLandingPage: React.FC = () => {
                 <div style={{ backgroundColor: '#161b22', border: '1px solid #21262d', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#58a6ff' }} />
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f05032' }} />
                       <span style={{ fontFamily: 'monospace', color: '#79c0ff' }}>fadd48a</span>
                       <span style={{ color: '#f0f6fc', fontWeight: 500 }}>feat: add persistent safeStorage authentication</span>
                     </div>
@@ -469,7 +469,7 @@ export const ProductLandingPage: React.FC = () => {
           </div>
 
           <div style={{ backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '10px', padding: '28px 24px' }}>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#58a6ff', marginBottom: '14px', fontFamily: 'monospace' }}>02</div>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#f05032', marginBottom: '14px', fontFamily: 'monospace' }}>02</div>
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f0f6fc', margin: '0 0 10px' }}>Work Visually</h3>
             <p style={{ color: '#8b949e', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
               Review file changes with side-by-side Monaco diffs, stage files individually or in bulk, switch branches, and resolve conflicts visually.
@@ -504,7 +504,7 @@ export const ProductLandingPage: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Globe size={24} color="#58a6ff" />
+                    <Globe size={24} color="#f05032" />
                     <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#f0f6fc', margin: 0 }}>Browser</h3>
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: 600, color: '#3fb950', backgroundColor: 'rgba(63,185,80,0.1)', padding: '3px 8px', borderRadius: '4px' }}>
@@ -563,7 +563,7 @@ export const ProductLandingPage: React.FC = () => {
                     <Monitor size={24} color="#79c0ff" />
                     <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#f0f6fc', margin: 0 }}>Desktop</h3>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', padding: '3px 8px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#f05032', backgroundColor: 'rgba(240,80,50,0.1)', padding: '3px 8px', borderRadius: '4px' }}>
                     Native Performance
                   </span>
                 </div>
@@ -574,16 +574,16 @@ export const ProductLandingPage: React.FC = () => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#c9d1d9' }}>
-                    <CheckCircle2 size={16} color="#58a6ff" /> Native Git binary execution
+                    <CheckCircle2 size={16} color="#f05032" /> Native Git binary execution
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#c9d1d9' }}>
-                    <CheckCircle2 size={16} color="#58a6ff" /> Unlimited repository scale (zero browser limits)
+                    <CheckCircle2 size={16} color="#f05032" /> Unlimited repository scale (zero browser limits)
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#c9d1d9' }}>
-                    <CheckCircle2 size={16} color="#58a6ff" /> OS safeStorage token encryption (DPAPI / Keychain)
+                    <CheckCircle2 size={16} color="#f05032" /> OS safeStorage token encryption (DPAPI / Keychain)
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#c9d1d9' }}>
-                    <CheckCircle2 size={16} color="#58a6ff" /> Native OS shortcuts & folder drag-and-drop
+                    <CheckCircle2 size={16} color="#f05032" /> Native OS shortcuts & folder drag-and-drop
                   </div>
                 </div>
               </div>
@@ -628,7 +628,7 @@ export const ProductLandingPage: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
           <div style={{ backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '10px', padding: '24px' }}>
-            <FileCode2 size={24} color="#58a6ff" style={{ marginBottom: '14px' }} />
+            <FileCode2 size={24} color="#f05032" style={{ marginBottom: '14px' }} />
             <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#f0f6fc', margin: '0 0 8px' }}>Visual Staging & Diffs</h3>
             <p style={{ color: '#8b949e', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
               Stage files individually or in bulk. Review inline and split diffs with syntax highlighting powered by Monaco Editor.

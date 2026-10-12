@@ -27,11 +27,11 @@ export interface GraphLayoutResult {
 }
 
 const LANE_COLORS = [
-  '#58a6ff', // blue
+  '#f05032', // Git brand orange (main trunk)
   '#3fb950', // green
   '#bc8cff', // purple
-  '#f0883e', // orange
-  '#79c0ff', // light blue
+  '#58a6ff', // blue
+  '#f0883e', // light orange
   '#d29922', // yellow
   '#f778ba', // pink
   '#56d364', // bright green

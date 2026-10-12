@@ -97,7 +97,7 @@ export const DownloadPage: React.FC = () => {
               border: '1px solid #30363d',
               backgroundColor: '#161b22',
               fontSize: '12px',
-              color: '#58a6ff',
+              color: '#f05032',
               fontWeight: 600,
               marginBottom: '18px',
             }}
@@ -122,7 +122,7 @@ export const DownloadPage: React.FC = () => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Monitor size={26} color="#58a6ff" />
+                  <Monitor size={26} color="#f05032" />
                   <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#f0f6fc', margin: 0 }}>Windows</h3>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#3fb950', backgroundColor: 'rgba(63,185,80,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
@@ -149,13 +149,14 @@ export const DownloadPage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                backgroundColor: '#238636',
+                backgroundColor: '#f05032',
                 color: '#ffffff',
                 padding: '11px 18px',
                 borderRadius: '6px',
                 fontSize: '14px',
                 fontWeight: 600,
                 textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(240, 80, 50, 0.4)',
               }}
             >
               <Download size={16} />
@@ -218,7 +219,7 @@ export const DownloadPage: React.FC = () => {
                   <Terminal size={26} color="#79c0ff" />
                   <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#f0f6fc', margin: 0 }}>Linux</h3>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#f05032', backgroundColor: 'rgba(240,80,50,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                   x86_64
                 </span>
               </div>
