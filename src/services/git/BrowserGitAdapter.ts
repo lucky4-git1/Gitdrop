@@ -20,16 +20,16 @@ import { logger } from '../logger/logger';
 
 export function parseGitConfigRemotes(configContent: string): Remote[] {
   const remotes: Remote[] = [];
-  const remoteSectionRegex = /\[remote\s+["'](.+?)["']\]([\s\S]*?)(?=\n\[|$)/g;
+  const remoteSectionRegex = /\[remote(?:\s+["'](.+?)["']|\s+([^\s\]]+))\]([\s\S]*?)(?=(?:\r?\n)\[|$)/gi;
   let match: RegExpExecArray | null;
 
   while ((match = remoteSectionRegex.exec(configContent)) !== null) {
-    const name = match[1];
-    const sectionBody = match[2];
-    const urlMatch = sectionBody.match(/^\s*url\s*=\s*(.+)$/m);
-    if (urlMatch) {
+    const name = match[1] || match[2];
+    const sectionBody = match[3];
+    const urlMatch = sectionBody?.match(/^\s*url\s*=\s*(.+)$/m);
+    if (urlMatch && name) {
       remotes.push({
-        name,
+        name: name.trim(),
         url: urlMatch[1].trim(),
       });
     }
@@ -656,30 +656,35 @@ export class BrowserGitAdapter implements GitService {
       return [];
     }
 
-    try {
-      const list = await git.listRemotes({ fs: this.gitFs, dir: this.dir });
-      if (list && list.length > 0) {
-        return list.map((r) => ({
-          name: r.remote,
-          url: r.url,
-        }));
-      }
-    } catch (err: any) {
-      logger.warn('git', 'isomorphic-git listRemotes failed, falling back to direct .git/config parse', err?.message);
-    }
+    const remotesMap = new Map<string, string>();
 
-    // Direct fallback parse of .git/config
+    // 1. Direct parse of .git/config (handles quoted, unquoted, CRLF/LF)
     try {
       if (await this.fs.exists('.git/config')) {
         const configContent = await this.fs.readFile('.git/config', { encoding: 'utf8' });
         const text = typeof configContent === 'string' ? configContent : new TextDecoder().decode(configContent);
-        return parseGitConfigRemotes(text);
+        const parsed = parseGitConfigRemotes(text);
+        parsed.forEach((r) => remotesMap.set(r.name, r.url));
       }
     } catch (err: any) {
-      logger.error('git', 'Failed reading .git/config directly', err?.message);
+      logger.warn('git', 'Direct .git/config read failed', err?.message);
     }
 
-    return [];
+    // 2. Also query isomorphic-git listRemotes
+    try {
+      const list = await git.listRemotes({ fs: this.gitFs, dir: this.dir });
+      if (list && list.length > 0) {
+        list.forEach((r) => {
+          if (!remotesMap.has(r.remote)) {
+            remotesMap.set(r.remote, r.url);
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    return Array.from(remotesMap.entries()).map(([name, url]) => ({ name, url }));
   }
 
   private getAuthCredentials(token?: string) {
@@ -718,7 +723,7 @@ export class BrowserGitAdapter implements GitService {
           const raw = await this.fs.readFile('.git/config', { encoding: 'utf8' });
           content = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
         }
-        const sectionRegex = new RegExp(`\\[remote\\s+["']${name}["']\\][\\s\\S]*?(?=\\n\\[|$)`, 'g');
+        const sectionRegex = new RegExp(`\\[remote(?:\\s+["']${name}["']|\\s+${name})\\][\\s\\S]*?(?=(?:\\r?\\n)\\[|$)`, 'gi');
         const newSection = `[remote "${name}"]\n\turl = ${url}\n\tfetch = +refs/heads/*:refs/remotes/${name}/*\n`;
         if (sectionRegex.test(content)) {
           content = content.replace(sectionRegex, newSection.trim());

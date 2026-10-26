@@ -44,22 +44,25 @@ export const GlobalDropOverlay: React.FC = () => {
       dragCounter = 0;
       setIsDragOver(false);
 
-      const items = e.dataTransfer?.items;
-      if (!items || items.length === 0) return;
+      const dt = e.dataTransfer;
+      if (!dt) return;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if ('getAsFileSystemHandle' in item) {
-          try {
-            const handle = await (item as any).getAsFileSystemHandle();
-            if (handle && handle.kind === 'directory') {
-              setDetectedHandle(handle as FileSystemDirectoryHandle);
-              setIsPromptOpen(true);
-              return;
-            }
-          } catch {
-            // ignore
+      const handlePromises: Promise<any>[] = [];
+      if (dt.items && dt.items.length > 0) {
+        for (let i = 0; i < dt.items.length; i++) {
+          const item = dt.items[i];
+          if (typeof (item as any).getAsFileSystemHandle === 'function') {
+            handlePromises.push((item as any).getAsFileSystemHandle().catch(() => null));
           }
+        }
+      }
+
+      const handles = await Promise.all(handlePromises);
+      for (const handle of handles) {
+        if (handle && handle.kind === 'directory') {
+          setDetectedHandle(handle as FileSystemDirectoryHandle);
+          setIsPromptOpen(true);
+          return;
         }
       }
     };

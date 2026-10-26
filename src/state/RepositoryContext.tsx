@@ -19,6 +19,7 @@ interface RepositoryContextType {
   needsPermission: boolean;
   projectManager: ProjectManager;
   requestActivePermission: () => Promise<boolean>;
+  requestPermission: (projectId?: string) => Promise<boolean>;
   openDirectoryPicker: () => Promise<void>;
   openDirectoryHandle: (handle: FileSystemDirectoryHandle, autoOpen?: boolean) => Promise<ProjectEntry>;
   openVirtualProject: (sampleName?: string) => Promise<void>;
@@ -137,9 +138,18 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await refreshProjectsList();
   }, [refreshProjectsList]);
 
+  const requestPermission = useCallback(
+    async (projectId?: string): Promise<boolean> => {
+      const success = await projectManager.requestPermission(projectId);
+      await refreshProjectsList();
+      return success;
+    },
+    [refreshProjectsList]
+  );
+
   const requestActivePermission = useCallback(async (): Promise<boolean> => {
-    return await projectManager.requestPermissionForActiveProject();
-  }, []);
+    return await requestPermission();
+  }, [requestPermission]);
 
   const openDirectoryHandle = useCallback(
     async (handle: FileSystemDirectoryHandle, autoOpen: boolean = true): Promise<ProjectEntry> => {
@@ -307,6 +317,7 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         needsPermission,
         projectManager,
         requestActivePermission,
+        requestPermission,
         openDirectoryPicker,
         openDirectoryHandle,
         openVirtualProject,

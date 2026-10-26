@@ -29,7 +29,7 @@ export const LandingPage: React.FC = () => {
     projects,
     switchProject,
     needsPermission,
-    requestActivePermission,
+    requestPermission,
     isOpen,
   } = useRepository();
   const { setActiveView } = useUI();
@@ -52,28 +52,42 @@ export const LandingPage: React.FC = () => {
     setIsDragOver(false);
   };
 
+  const handleGrantAccess = async () => {
+    try {
+      const ok = await requestPermission(activeProject?.id);
+      if (ok) {
+        setActiveView('workspace');
+      }
+    } catch (err: any) {
+      console.error('Failed to grant folder access:', err);
+    }
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
 
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
+    const dt = e.dataTransfer;
+    if (!dt) return;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      // File System Access API support for drag and drop
-      if ('getAsFileSystemHandle' in item) {
-        try {
-          const handle = await (item as any).getAsFileSystemHandle();
-          if (handle && handle.kind === 'directory') {
-            await openDirectoryHandle(handle as FileSystemDirectoryHandle, true);
-            setActiveView('workspace');
-            return;
-          }
-        } catch {
-          // fallback
+    // Collect handle promises synchronously before microtask tick
+    const handlePromises: Promise<any>[] = [];
+    if (dt.items && dt.items.length > 0) {
+      for (let i = 0; i < dt.items.length; i++) {
+        const item = dt.items[i];
+        if (typeof (item as any).getAsFileSystemHandle === 'function') {
+          handlePromises.push((item as any).getAsFileSystemHandle().catch(() => null));
         }
+      }
+    }
+
+    const handles = await Promise.all(handlePromises);
+    for (const handle of handles) {
+      if (handle && handle.kind === 'directory') {
+        await openDirectoryHandle(handle as FileSystemDirectoryHandle, true);
+        setActiveView('workspace');
+        return;
       }
     }
   };
@@ -214,14 +228,14 @@ export const LandingPage: React.FC = () => {
               <ShieldAlert size={24} color="var(--warning-text)" />
               <div>
                 <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--warning-text)' }}>
-                  Folder permission required
+                  Folder access required
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Grant browser permission to access <strong>{activeProject.name}</strong> to resume work
+                  Grant permission to access <strong>{activeProject.displayName || activeProject.name}</strong> to resume work
                 </div>
               </div>
             </div>
-            <button className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm" onClick={requestActivePermission}>
+            <button className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm" onClick={handleGrantAccess}>
               Grant Access
             </button>
           </div>

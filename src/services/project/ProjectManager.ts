@@ -218,26 +218,49 @@ export class ProjectManager implements IProjectManager {
   }
 
   /**
-   * Prompts user for native permission on stored directory handle
+   * Prompts user for native permission on stored directory handle or falls back to picker
    */
   public async requestPermissionForActiveProject(): Promise<boolean> {
-    const active = this.activeState.project;
-    if (!active) return false;
+    return this.requestPermission();
+  }
 
-    const handle = await this.registry.getHandle(active.id);
-    if (!handle) return false;
+  public async requestPermission(projectId?: string): Promise<boolean> {
+    const target = projectId
+      ? await this.registry.getProject(projectId)
+      : this.activeState.project;
 
-    try {
-      if ('requestPermission' in handle) {
+    if (!target) return false;
+
+    let handle = await this.registry.getHandle(target.id);
+    if (handle && 'requestPermission' in handle) {
+      try {
         const res = await (handle as any).requestPermission({ mode: 'readwrite' });
         if (res === 'granted') {
-          await this.setActiveProject(active.id);
+          target.needsPermission = false;
+          await this.registry.updateProject(target.id, { needsPermission: false });
+          await this.setActiveProject(target.id, handle);
           return true;
         }
+      } catch (err: any) {
+        logger.warn('app', 'Directory handle requestPermission failed, falling back to folder picker', err?.message);
       }
-    } catch (err: any) {
-      logger.error('app', 'Permission request failed', err?.message);
     }
+
+    // Web directory picker fallback
+    if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
+      try {
+        const newHandle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+        if (newHandle) {
+          target.needsPermission = false;
+          await this.registry.saveProject(target, newHandle);
+          await this.setActiveProject(target.id, newHandle);
+          return true;
+        }
+      } catch (err: any) {
+        logger.debug('app', 'User cancelled folder picker in requestPermission', err?.message);
+      }
+    }
+
     return false;
   }
 

@@ -155,6 +155,24 @@ describe('BrowserGitAdapter', () => {
     remotes = await adapter.remotes();
     expect(remotes.find((r) => r.name === 'origin')?.url).toBe('https://github.com/test/updated-repo.git');
   });
+
+  it('parses unquoted and CRLF remote configurations in .git/config', async () => {
+    const fs = new MemoryFS();
+    const adapter = new BrowserGitAdapter(fs, '/');
+
+    await fs.mkdir('.git');
+    await fs.writeFile(
+      '.git/config',
+      '[core]\r\n\trepositoryformatversion = 0\r\n[remote origin]\r\n\turl = https://github.com/my-org/unquoted.git\r\n\tfetch = +refs/heads/*:refs/remotes/origin/*\r\n[remote "backup"]\r\n\turl = https://gitlab.com/my-org/backup.git\r\n'
+    );
+
+    const remotes = await adapter.remotes();
+    expect(remotes.length).toBe(2);
+    expect(remotes[0].name).toBe('origin');
+    expect(remotes[0].url).toBe('https://github.com/my-org/unquoted.git');
+    expect(remotes[1].name).toBe('backup');
+    expect(remotes[1].url).toBe('https://gitlab.com/my-org/backup.git');
+  });
 });
 
 

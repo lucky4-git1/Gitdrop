@@ -40,11 +40,13 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
     setDefaultProject,
     renameProject,
     openDirectoryPicker,
+    openDirectoryHandle,
     openVirtualProject,
-    requestActivePermission,
+    requestPermission,
   } = useRepository();
   const { setActiveView, requestConfirm } = useUI();
 
+  const [isDragOver, setIsDragOver] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'lastOpened' | 'name' | 'status'>('lastOpened');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -93,6 +95,57 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
       setActiveView('workspace');
     } catch {
       // handled
+    }
+  };
+
+  const handleGrantAccess = async (project: ProjectEntry) => {
+    try {
+      const ok = await requestPermission(project.id);
+      if (ok) {
+        setActiveView('workspace');
+      }
+    } catch (err: any) {
+      console.error('Failed to grant project access:', err);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const dt = e.dataTransfer;
+    if (!dt) return;
+
+    const handlePromises: Promise<any>[] = [];
+    if (dt.items && dt.items.length > 0) {
+      for (let i = 0; i < dt.items.length; i++) {
+        const item = dt.items[i];
+        if (typeof (item as any).getAsFileSystemHandle === 'function') {
+          handlePromises.push((item as any).getAsFileSystemHandle().catch(() => null));
+        }
+      }
+    }
+
+    const handles = await Promise.all(handlePromises);
+    for (const handle of handles) {
+      if (handle && handle.kind === 'directory') {
+        await openDirectoryHandle(handle as FileSystemDirectoryHandle, true);
+        setActiveView('workspace');
+        return;
+      }
     }
   };
 
@@ -151,7 +204,20 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+        outline: isDragOver ? '2px dashed var(--accent)' : 'none',
+        outlineOffset: '-2px',
+      }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Workspace Header Toolbar */}
       <div
         style={{
@@ -399,7 +465,7 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
                     {p.needsPermission ? (
                       <button
                         className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm"
-                        onClick={() => requestActivePermission()}
+                        onClick={() => handleGrantAccess(p)}
                       >
                         <ShieldAlert size={12} />
                         <span>Grant Access</span>
@@ -417,12 +483,23 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
                       </span>
                     )}
 
-                    <button
-                      className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
-                      onClick={() => handleOpenProject(p)}
-                    >
-                      {isActive ? 'Opened' : 'Open'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {p.needsPermission && (
+                        <button
+                          className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm"
+                          onClick={() => handleGrantAccess(p)}
+                        >
+                          <ShieldAlert size={12} />
+                          <span>Grant Access</span>
+                        </button>
+                      )}
+                      <button
+                        className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+                        onClick={() => handleOpenProject(p)}
+                      >
+                        {isActive ? 'Opened' : 'Open'}
+                      </button>
+                    </div>
 
                     {/* Context Menu Button */}
                     <div style={{ position: 'relative' }}>
@@ -589,12 +666,23 @@ export const ProjectsWorkspace: React.FC<ProjectsWorkspaceProps> = () => {
                       {hasChanges ? `● ${p.statusSummary?.changesCount} changes` : '✓ Clean'}
                     </span>
 
-                    <button
-                      className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
-                      onClick={() => handleOpenProject(p)}
-                    >
-                      {isActive ? 'Opened' : 'Open'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {p.needsPermission && (
+                        <button
+                          className="btn-gitdrop btn-gitdrop-warning btn-gitdrop-sm"
+                          onClick={() => handleGrantAccess(p)}
+                        >
+                          <ShieldAlert size={12} />
+                          <span>Grant Access</span>
+                        </button>
+                      )}
+                      <button
+                        className="btn-gitdrop btn-gitdrop-primary btn-gitdrop-sm"
+                        onClick={() => handleOpenProject(p)}
+                      >
+                        {isActive ? 'Opened' : 'Open'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
